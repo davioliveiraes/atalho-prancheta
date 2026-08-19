@@ -1,0 +1,23 @@
+# Runtime — Python 3.14
+# Dependências de desenvolvimento ficam em requirements-dev.txt
+
+# Django Core
+Django==6.0.8
+djangorestframework==3.18.0
+django-cors-headers==4.9.0
+
+# Database
+psycopg[binary]==3.3.4
+dj-database-url==3.1.2
+
+# Environment
+python-dotenv==1.2.3
+python-decouple==3.8
+
+# Images & QR Codes
+Pillow==12.3.0
+qrcode[pil]==8.2
+
+# Production Server
+gunicorn==26.1.0
+whitenoise==6.12.0

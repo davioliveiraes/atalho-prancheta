@@ -36,6 +36,11 @@ ALLOWED_HOSTS = config(
     cast=lambda v: [s.strip() for s in v.split(",")],
 )
 
+INTERNAL_ALLOWED_HOSTS = config("INTERNAL_ALLOWED_HOSTS", default="", cast=Csv())
+for internal_host in INTERNAL_ALLOWED_HOSTS:
+    if internal_host and internal_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(internal_host)
+
 # Render.com specific
 RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
@@ -153,7 +158,19 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # WhiteNoise configuration
-STATICFILES_STORAGE = "whitenoise.storage.StaticFilesStorage"
+# Django >= 5.1 removeu STATICFILES_STORAGE; a configuracao agora vive em STORAGES.
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG
+            else "whitenoise.storage.StaticFilesStorage"
+        ),
+    },
+}
 
 # Configurações adicionais do WhiteNoise
 WHITENOISE_USE_FINDERS = True

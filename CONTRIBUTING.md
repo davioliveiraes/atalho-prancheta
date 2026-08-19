@@ -7,7 +7,7 @@ Obrigado por considerar contribuir! 🎉
 1. **Fork** o repositório
 2. **Crie uma branch**: `git checkout -b feature/minha-feature`
 3. **Faça suas mudanças** seguindo os padrões
-4. **Teste**: `docker-compose exec web python manage.py test`
+4. **Teste**: `docker compose exec backend python manage.py test`
 5. **Commit**: Use [Conventional Commits](https://www.conventionalcommits.org/)
 6. **Push**: `git push origin feature/minha-feature`
 7. **Abra um Pull Request**
@@ -21,16 +21,16 @@ git clone https://github.com/davioliveiraes/url_shortener_api.git
 cd url_shortener_api
 
 # Suba os containers
-docker-compose up -d
+docker compose up -d
 
 # Execute as migrações
-docker-compose exec web python manage.py migrate
+docker compose exec backend python manage.py migrate
 
 # Crie um superusuário
-docker-compose exec web python manage.py createsuperuser
+docker compose exec backend python manage.py createsuperuser
 
 # Rode os testes
-docker-compose exec web python manage.py test shortener.tests
+docker compose exec backend python manage.py test shortener.tests
 ```
 
 ---
@@ -41,8 +41,8 @@ docker-compose exec web python manage.py test shortener.tests
 - **PEP 8** para estilo
 - **Docstrings** em funções/classes públicas
 - **Type hints** onde possível
-- **Black** para formatação: `black shortener/`
-- **isort** para imports: `isort shortener/`
+- **Black** para formatação: `black backend/`
+- **isort** para imports: `isort backend/`
 
 ### Commits
 Use o formato: `<tipo>: <descrição>`

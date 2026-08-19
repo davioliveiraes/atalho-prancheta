@@ -1,0 +1,8 @@
+# Ferramentas de desenvolvimento — não vão para a imagem de produção.
+-r requirements.txt
+
+black==26.5.1
+isort==8.0.1
+pylint==4.0.7
+pylint-django==2.8.0
+pre-commit==4.6.2

@@ -1,11 +1,12 @@
-# 🔗 URL Shortener API
+# 🔗 Atalho — links permanentes
 
-> REST API profissional para encurtamento de URLs com Django REST Framework, PostgreSQL e Docker.
+> Aplicação full stack para publicar um endereço fixo e atualizar seu destino quando necessário.
 
-[![Python](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/Django-4.2.7-green.svg)](https://www.djangoproject.com/)
+[![Python](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-6.0.8-green.svg)](https://www.djangoproject.com/)
 [![DRF](https://img.shields.io/badge/DRF-3.14.0-red.svg)](https://www.django-rest-framework.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+[![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
 [![Tests](https://img.shields.io/badge/Tests-53%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
 
@@ -37,7 +38,7 @@
 
 ## Sobre o Projeto
 
-API RESTful completa para encurtamento de URLs, desenvolvida com as melhores práticas de engenharia de software. O projeto demonstra habilidades em desenvolvimento backend, arquitetura de APIs, containerização e qualidade de código.
+Aplicação full stack para criar atalhos permanentes. O código divulgado permanece igual enquanto o destino pode ser atualizado pela interface ou pela API REST.
 
 ### Destaques
 
@@ -45,6 +46,7 @@ API RESTful completa para encurtamento de URLs, desenvolvida com as melhores pr�
 - ✅ **Cobertura completa** de models, serializers e views
 - ✅ **Código limpo** seguindo PEP 8 e boas práticas
 - ✅ **Dockerizado** para fácil deployment
+- ✅ **Frontend React responsivo** com design system próprio
 - ✅ **Documentação completa** com Postman
 - ✅ **Interface Admin** customizada
 
@@ -54,6 +56,7 @@ API RESTful completa para encurtamento de URLs, desenvolvida com as melhores pr�
 
 ### Core Features
 
+- 🧭 **Destino atualizável** sem alterar o atalho divulgado
 - 🔗 **Encurtamento de URLs** com código auto-gerado ou customizado
 - 📊 **Tracking de Cliques** (total e únicos por IP)
 - ⏰ **URLs com Expiração** (data/hora customizável)
@@ -76,11 +79,17 @@ API RESTful completa para encurtamento de URLs, desenvolvida com as melhores pr�
 ## Tecnologias
 
 ### Backend
-- **Python 3.13** - Linguagem principal
-- **Django 4.2.7** - Framework web
+- **Python 3.14** - Linguagem principal
+- **Django 6.0.8** - Framework web
 - **Django REST Framework 3.14.0** - API REST
-- **PostgreSQL 16** - Banco de dados
+- **PostgreSQL 15** - Banco de dados
 - **psycopg3** - Driver PostgreSQL
+
+### Frontend
+- **React 19** - Interface declarativa
+- **TypeScript** - Tipagem estática
+- **Vite 8** - Desenvolvimento e build
+- **CSS Variables** - Tokens do design system
 
 ### DevOps & Tools
 - **Docker & Docker Compose** - Containerização
@@ -100,30 +109,28 @@ API RESTful completa para encurtamento de URLs, desenvolvida com as melhores pr�
 
 ## Arquitetura
 ```
-┌─────────────┐
-│   Cliente   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────────┐
-│   Django REST API   │
-│  ┌───────────────┐  │
-│  │   ViewSets    │  │
-│  │  Serializers  │  │
-│  │    Models     │  │
-│  └───────┬───────┘  │
-└──────────┼──────────┘
-           │
-           ▼
-    ┌──────────────┐
-    │  PostgreSQL  │
-    └──────────────┘
+┌─────────────────┐
+│ React + Vite    │
+│ Design System   │
+└────────┬────────┘
+         │ /api
+         ▼
+┌─────────────────┐
+│ Django REST API │
+│ ViewSets        │
+│ Serializers     │
+│ Models          │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ PostgreSQL 15   │
+└─────────────────┘
 ```
 
 ### Padrões de Projeto
 
 - **MVT** (Model-View-Template) - Arquitetura Django
-- **Repository Pattern** - Camada de abstração de dados
 - **Serializer Pattern** - Validação e transformação de dados
 - **ViewSet Pattern** - Organização de endpoints REST
 
@@ -151,22 +158,24 @@ cp .env.example .env
 # Edite o .env com suas configurações
 ```
 
-3. **Suba os containers**
+3. **Suba backend, frontend e banco de dados**
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 4. **Execute as migrações**
 ```bash
-docker-compose exec web python manage.py migrate
+docker compose exec backend python manage.py migrate
 ```
 
 5. **Crie um superusuário**
 ```bash
-docker-compose exec web python manage.py createsuperuser
+docker compose exec backend python manage.py createsuperuser
 ```
 
-6. **Acesse a API**
+6. **Acesse a aplicação**
+- Frontend: http://localhost:5173/
+- Documentação da API: http://localhost:5173/developers
 - API: http://localhost:8000/api/urls/
 - Admin: http://localhost:8000/admin/
 
@@ -274,7 +283,7 @@ GET /api/urls/?page=2
 
 ### Executar Todos os Testes
 ```bash
-docker-compose exec web python manage.py test shortener.tests
+docker compose exec backend python manage.py test shortener.tests
 ```
 
 **Resultado:**

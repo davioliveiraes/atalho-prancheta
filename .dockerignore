@@ -1,6 +1,8 @@
 # Git
 .git
 .gitignore
+.agents
+.codex
 
 # Python
 __pycache__
@@ -10,17 +12,20 @@ __pycache__
 .Python
 env/
 venv/
+.venv/
 *.egg-info/
 
 # Django
 *.log
 db.sqlite3
-/media
-/staticfiles
+backend/media
+backend/staticfiles
 
 # Ambiente
 .env
 .env.local
+.env.*
+!.env.example
 
 # Docker
 Dockerfile
@@ -36,7 +41,10 @@ docker-compose.yml
 .coverage
 htmlcov/
 
+# Frontend
+frontend/node_modules
+frontend/dist
+
 # Documentação
 README.md
 docs/
-```

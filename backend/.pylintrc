@@ -12,6 +12,9 @@ load-plugins=pylint_django
 # Django settings module
 django-settings-module=config.settings
 
+# Versão do Python alvo (deve acompanhar runtime.txt)
+py-version=3.14
+
 [MESSAGES CONTROL]
 # Desabilitar algumas checagens muito restritivas para Django
 disable=

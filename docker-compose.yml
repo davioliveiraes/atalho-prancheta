@@ -1,55 +1,113 @@
-version: '3.8'
-
 services:
-  # Serviço do Banco de Dados PostgreSQL
   db:
     image: postgres:15-alpine
     container_name: urlshortener_db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-urlshortener_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      # Porta publicada no host. 5433 por padrao para nao colidir com uma
+      # instalacao nativa do PostgreSQL no Windows (que ocupa a 5432).
+      - "${DB_HOST_PORT:-5433}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     networks:
       - urlshortener_network
 
-  # Serviço da Aplicação Django
-  web:
-    build: .
-    container_name: urlshortener_web
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: urlshortener-backend:dev
+    container_name: urlshortener_backend
+    restart: unless-stopped
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "python manage.py migrate --noinput &&
              python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - .:/app
+      - ./backend:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     env_file:
       - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      INTERNAL_ALLOWED_HOSTS: backend
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/urls/').status==200 else 1)\"",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
     networks:
       - urlshortener_network
 
-# Volumes persistentes
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    image: urlshortener-frontend:dev
+    container_name: urlshortener_frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      # Volume anônimo/nomeado protege o node_modules do container contra o
+      # node_modules do host (binários nativos são específicos por plataforma).
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      VITE_PROXY_TARGET: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - urlshortener_network
+
+  # Build estático servido por nginx. Ativar com: docker compose --profile prod up
+  frontend-prod:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    image: urlshortener-frontend:prod
+    container_name: urlshortener_frontend_prod
+    restart: unless-stopped
+    profiles: ["prod"]
+    ports:
+      - "${FRONTEND_PROD_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - urlshortener_network
+
 volumes:
   postgres_data:
     driver: local
   static_volume:
   media_volume:
+  frontend_node_modules:
 
-# Rede customizada
 networks:
   urlshortener_network:
     driver: bridge
