@@ -112,7 +112,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": config("DB_NAME", default="urlshortener_db"),
+            "NAME": config("DB_NAME", default="atalho_prancheta"),
             "USER": config("DB_USER", default="postgres"),
             "PASSWORD": config("DB_PASSWORD", default="postgres123"),
             "HOST": config("DB_HOST", default="db"),

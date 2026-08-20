@@ -66,7 +66,7 @@ check: ## Roda todas as verificações
 
 clean-front: ## Remove node_modules/dist do host e o volume de deps do container
 	rm -rf frontend/node_modules frontend/dist frontend/*.tsbuildinfo
-	-docker volume rm atalho_frontend_node_modules
+	-docker volume rm atalho-prancheta_frontend_node_modules
 
 clean: ## Remove arquivos temporários
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

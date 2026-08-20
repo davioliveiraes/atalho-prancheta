@@ -17,8 +17,8 @@ Obrigado por considerar contribuir! 🎉
 ## Setup Local
 ```bash
 # Clone e entre no diretório
-git clone https://github.com/davioliveiraes/atalho.git
-cd atalho
+git clone https://github.com/davioliveiraes/atalho-prancheta.git
+cd atalho-prancheta
 
 # Suba os containers
 docker compose up -d
@@ -96,7 +96,7 @@ Passos para testar as mudanças
 
 ## Reportar Bugs
 
-Use [GitHub Issues](https://github.com/davioliveiraes/atalho/issues) incluindo:
+Use [GitHub Issues](https://github.com/davioliveiraes/atalho-prancheta/issues) incluindo:
 - Descrição do bug
 - Passos para reproduzir
 - Comportamento esperado vs atual
@@ -106,7 +106,7 @@ Use [GitHub Issues](https://github.com/davioliveiraes/atalho/issues) incluindo:
 
 ## Sugerir Funcionalidades
 
-Use [GitHub Issues](https://github.com/davioliveiraes/atalho/issues) com:
+Use [GitHub Issues](https://github.com/davioliveiraes/atalho-prancheta/issues) com:
 - Descrição da funcionalidade
 - Problema que resolve
 - Solução proposta
@@ -125,7 +125,7 @@ Use [GitHub Issues](https://github.com/davioliveiraes/atalho/issues) com:
 
 ## Contato
 
-- **Issues**: [GitHub Issues](https://github.com/davioliveiraes/atalho/issues)
+- **Issues**: [GitHub Issues](https://github.com/davioliveiraes/atalho-prancheta/issues)
 - **GitHub**: [@davioliveiraes](https://github.com/davioliveiraes)
 - **LinkedIn**: [Davi Oliveira](https://linkedin.com/in/davioliveiraes)
 

@@ -165,7 +165,7 @@ export function LandingPage() {
           color: "var(--ink-small)",
         }}
       >
-        Atalho · API Django REST Framework · /api/urls/
+        Atalho Prancheta · API Django REST Framework · /api/urls/
       </footer>
 
       <QrDialog

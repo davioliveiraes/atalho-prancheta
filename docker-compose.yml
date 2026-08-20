@@ -1,12 +1,12 @@
-name: atalho
+name: atalho-prancheta
 
 services:
   db:
     image: postgres:15-alpine
-    container_name: atalho_db
+    container_name: atalho_prancheta_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-urlshortener_db}
+      POSTGRES_DB: ${DB_NAME:-atalho_prancheta}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
     volumes:
@@ -22,14 +22,14 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - atalho_network
+      - prancheta_network
 
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: atalho-backend:dev
-    container_name: atalho_backend
+    image: atalho-prancheta-backend:dev
+    container_name: atalho_prancheta_backend
     restart: unless-stopped
     command: >
       sh -c "python manage.py migrate --noinput &&
@@ -60,15 +60,15 @@ services:
       db:
         condition: service_healthy
     networks:
-      - atalho_network
+      - prancheta_network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: development
-    image: atalho-frontend:dev
-    container_name: atalho_frontend
+    image: atalho-prancheta-frontend:dev
+    container_name: atalho_prancheta_frontend
     restart: unless-stopped
     volumes:
       - ./frontend:/app
@@ -85,7 +85,7 @@ services:
       backend:
         condition: service_started
     networks:
-      - atalho_network
+      - prancheta_network
 
   # Build estático servido por nginx. Ativar com: docker compose --profile prod up
   frontend-prod:
@@ -93,8 +93,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
-    image: atalho-frontend:prod
-    container_name: atalho_frontend_prod
+    image: atalho-prancheta-frontend:prod
+    container_name: atalho_prancheta_frontend_prod
     restart: unless-stopped
     profiles: ["prod"]
     ports:
@@ -103,7 +103,7 @@ services:
       backend:
         condition: service_started
     networks:
-      - atalho_network
+      - prancheta_network
 
 volumes:
   postgres_data:
@@ -113,5 +113,5 @@ volumes:
   frontend_node_modules:
 
 networks:
-  atalho_network:
+  prancheta_network:
     driver: bridge

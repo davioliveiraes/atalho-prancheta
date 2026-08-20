@@ -56,7 +56,7 @@ export function Nav() {
     <nav className="nav" aria-label="Principal">
       <Link className="nav-brand" to="/">
         <Grid size={18} strokeWidth={1.5} aria-hidden="true" />
-        Atalho
+        Atalho Prancheta
       </Link>
 
       <button
