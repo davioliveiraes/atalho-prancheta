@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Industry — folha única do design system EncurtadorControl.
+   Industry — folha única do design system do Atalho.
    Toda regra visual vive aqui. As telas usam apenas estas classes + layout
    (display:flex / grid + gap). Nenhuma tela redefine estado ou cor.
    ========================================================================== */

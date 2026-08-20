@@ -1,7 +1,9 @@
+name: atalho
+
 services:
   db:
     image: postgres:15-alpine
-    container_name: urlshortener_db
+    container_name: atalho_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-urlshortener_db}
@@ -20,14 +22,14 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - urlshortener_network
+      - atalho_network
 
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    image: urlshortener-backend:dev
-    container_name: urlshortener_backend
+    image: atalho-backend:dev
+    container_name: atalho_backend
     restart: unless-stopped
     command: >
       sh -c "python manage.py migrate --noinput &&
@@ -58,15 +60,15 @@ services:
       db:
         condition: service_healthy
     networks:
-      - urlshortener_network
+      - atalho_network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       target: development
-    image: urlshortener-frontend:dev
-    container_name: urlshortener_frontend
+    image: atalho-frontend:dev
+    container_name: atalho_frontend
     restart: unless-stopped
     volumes:
       - ./frontend:/app
@@ -83,7 +85,7 @@ services:
       backend:
         condition: service_started
     networks:
-      - urlshortener_network
+      - atalho_network
 
   # Build estático servido por nginx. Ativar com: docker compose --profile prod up
   frontend-prod:
@@ -91,8 +93,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
-    image: urlshortener-frontend:prod
-    container_name: urlshortener_frontend_prod
+    image: atalho-frontend:prod
+    container_name: atalho_frontend_prod
     restart: unless-stopped
     profiles: ["prod"]
     ports:
@@ -101,7 +103,7 @@ services:
       backend:
         condition: service_started
     networks:
-      - urlshortener_network
+      - atalho_network
 
 volumes:
   postgres_data:
@@ -111,5 +113,5 @@ volumes:
   frontend_node_modules:
 
 networks:
-  urlshortener_network:
+  atalho_network:
     driver: bridge

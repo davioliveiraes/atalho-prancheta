@@ -165,7 +165,7 @@ export function LandingPage() {
           color: "var(--ink-small)",
         }}
       >
-        EncurtadorControl · API Django REST Framework · /api/urls/
+        Atalho · API Django REST Framework · /api/urls/
       </footer>
 
       <QrDialog

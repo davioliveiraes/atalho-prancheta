@@ -59,4 +59,4 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 ---
 
-[1.0.0]: https://github.com/davioliveiraes/url_shortener_api/releases/tag/v1.0.0
+[1.0.0]: https://github.com/davioliveiraes/atalho/releases/tag/v1.0.0

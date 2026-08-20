@@ -148,8 +148,8 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/davioliveiraes/url_shortener_api.git
-cd url_shortener_api
+git clone https://github.com/davioliveiraes/atalho.git
+cd atalho
 ```
 
 2. **Configure as variáveis de ambiente**
