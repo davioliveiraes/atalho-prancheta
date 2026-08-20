@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-53%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
+[![Tests](https://img.shields.io/badge/Tests-68%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
 
 ---
 
@@ -42,7 +42,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 
 ### Destaques
 
-- ✅ **53 testes automatizados** com 100% de sucesso
+- ✅ **68 testes automatizados** com 100% de sucesso
 - ✅ **Cobertura completa** de models, serializers e views
 - ✅ **Código limpo** seguindo PEP 8 e boas práticas
 - ✅ **Dockerizado** para fácil deployment
@@ -175,9 +175,11 @@ docker compose exec backend python manage.py createsuperuser
 
 6. **Acesse a aplicação**
 - Frontend: http://localhost:5173/
-- Documentação da API: http://localhost:5173/developers
 - API: http://localhost:8000/api/urls/
 - Admin: http://localhost:8000/admin/
+
+> A documentação da API não é servida pelo frontend. Veja [`docs/EXAMPLES.md`](docs/EXAMPLES.md)
+> e a coleção Postman em [`docs/`](docs/).
 
 ---
 
@@ -288,21 +290,22 @@ docker compose exec backend python manage.py test shortener.tests
 
 **Resultado:**
 ```
-Found 53 test(s).
+Found 68 test(s).
 System check identified no issues (0 silenced).
-.....................................................
+....................................................................
 ----------------------------------------------------------------------
-Ran 53 tests in 1.310s
+Ran 68 tests in 0.648s
 
 OK
 ```
 
 ### Categorias de Testes
 
-- ✅ **Models** (13 testes) - Lógica de negócio
-- ✅ **Serializers** (16 testes) - Validações
+- ✅ **Models** (17 testes) - Lógica de negócio
+- ✅ **Serializers** (12 testes) - Validações
 - ✅ **Views** (15 testes) - Endpoints CRUD
-- ✅ **Redirects** (9 testes) - Tracking de cliques
+- ✅ **Redirects** (11 testes) - Tracking de cliques
+- ✅ **Admin** (13 testes) - Colunas e painéis calculados
 
 ---
 
@@ -342,7 +345,7 @@ Os QR Codes são gerados automaticamente, mas devido ao **storage efêmero do Re
 - ✅ Gunicorn + WhiteNoise
 - ✅ SSL/HTTPS automático
 - ✅ CI/CD via GitHub
-- ✅ 53 testes (100% passing)
+- ✅ 68 testes (100% passing)
 
 ### Endpoints Principais:
 

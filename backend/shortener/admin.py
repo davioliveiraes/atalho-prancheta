@@ -217,7 +217,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
                 '<img src="{}" width="40" height="40" style="border: 1px solid #ddd;" />',
                 obj.qr_code.url,
             )
-        return format_html('<span style="color: #999;">Sem QR</span>')
+        return mark_safe('<span style="color: #999;">Sem QR</span>')
 
     qr_preview.short_description = "QR"
 
@@ -236,7 +236,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
                 obj.qr_code.url,
                 obj.qr_code.url,
             )
-        return format_html('<p style="color: #999;">QR Code não gerado</p>')
+        return mark_safe('<p style="color: #999;">QR Code não gerado</p>')
 
     qr_code_large.short_description = "Preview do QR Code"
 
@@ -299,7 +299,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
         clicks = obj.clicks.all().order_by("-clicked_at")[:10]
 
         if not clicks.exists():
-            return format_html(
+            return mark_safe(
                 '<p style="color: #999; font-style: italic;">Nenhum clique registrado ainda</p>'
             )
 
@@ -345,7 +345,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
 
         html += "</tbody></table>"
 
-        total_clicks = obj.Clicks.count()
+        total_clicks = obj.clicks.count()
         if total_clicks > 10:
             html += f'<p style="margin-top: 10px; color: #6c757d; font-size: 11px;">Mostrando 10 de {total_clicks} cliques totais</p>'
 
@@ -480,13 +480,13 @@ class ClickAdmin(admin.ModelAdmin):
                 obj.referer,
                 display,
             )
-        return format_html('<span style="color: #999;">-</span>')
+        return mark_safe('<span style="color: #999;">-</span>')
 
     referer_display.short_description = "Origem (Referer)"
 
     def user_agent_formatted(self, obj):
         if not obj.user_agent:
-            return format_html('<p style="color: #999;">Não disponível</p>')
+            return mark_safe('<p style="color: #999;">Não disponível</p>')
 
         return format_html(
             """
