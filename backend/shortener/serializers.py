@@ -38,6 +38,10 @@ class ShortenedURLListSerializer(serializers.ModelSerializer):
 
     Fornece uma visão resumida com informações essenciais e campos calculadors para exibição em listas.
 
+    Inclui expires_at e max_clicks porque as fichas do painel precisam dos dois
+    para decidir entre o bloco de números e a barra de progresso — sem eles a
+    interface teria de buscar o detalhe de cada item da página.
+
     Campos adicionais:
         short_url: URL completa para redirecionamento
         status: Status de acesso com o indicador can_access e a mensagem
@@ -54,6 +58,8 @@ class ShortenedURLListSerializer(serializers.ModelSerializer):
             "original_url",
             "short_url",
             "is_active",
+            "expires_at",
+            "max_clicks",
             "total_clicks",
             "unique_clicks",
             "status",

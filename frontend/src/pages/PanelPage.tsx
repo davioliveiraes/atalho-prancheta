@@ -338,15 +338,14 @@ export function PanelPage() {
 
 /**
  * 1h — cada linha da tabela vira uma ficha. `.table` não cabe em 390px.
- * O medidor aparece quando `max_clicks` está presente; hoje o serializador de
- * lista não devolve o campo (tarefa aberta), então a ficha cai nos números.
+ * Com `max_clicks` definido a ficha mostra o medidor; sem ele, os números.
  */
 function MobileCard({
   item,
   onChanged,
   onQr,
 }: {
-  item: LinkListItem & { max_clicks?: number };
+  item: LinkListItem;
   onChanged: () => Promise<void>;
   onQr: (code: string) => void;
 }) {

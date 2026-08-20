@@ -26,13 +26,15 @@ export interface LinkStatistics {
   has_reached_max_clicks: boolean;
 }
 
-/** ShortenedURLListSerializer — note que NÃO traz expires_at/max_clicks/qr_code */
+/** ShortenedURLListSerializer — não traz qr_code, statistics nem recent_clicks */
 export interface LinkListItem {
   id: number;
   short_code: string;
   original_url: string;
   short_url: string;
   is_active: boolean;
+  expires_at: string | null;
+  max_clicks: number;
   total_clicks: number;
   unique_clicks: number;
   status: LinkStatus;
@@ -41,8 +43,6 @@ export interface LinkListItem {
 
 /** ShortenedURLDetailSerializer */
 export interface LinkDetail extends LinkListItem {
-  expires_at: string | null;
-  max_clicks: number;
   qr_code: string | null;
   statistics: LinkStatistics;
   recent_clicks: ClickRecord[];

@@ -7,7 +7,7 @@ import { Plate } from "../components/Plate";
 import { ApiError, type LinkSummary, linkApi } from "../lib/api";
 import { formatDateShort, formatNumber, linkState } from "../lib/format";
 import { Link, navigate } from "../lib/router";
-import type { LinkDetail } from "../types";
+import type { LinkListItem } from "../types";
 
 const PAGE_SIZE = 10;
 
@@ -30,7 +30,7 @@ export function CardsPanelPage() {
   const [term, setTerm] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
-  const [cards, setCards] = useState<LinkDetail[]>([]);
+  const [cards, setCards] = useState<LinkListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [summary, setSummary] = useState<LinkSummary | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -52,13 +52,8 @@ export function CardsPanelPage() {
     const params = { search: term, isActive: STATUS_QUERY[status] };
     try {
       const list = await linkApi.list({ ...params, page });
-      // O serializador de lista não devolve max_clicks nem expires_at, que a
-      // ficha precisa. Buscamos o detalhe de cada item da página.
-      const details = await Promise.all(
-        list.results.map((item) => linkApi.detail(item.short_code)),
-      );
       setTotal(list.count);
-      setCards((current) => (page === 1 ? details : [...current, ...details]));
+      setCards((current) => (page === 1 ? list.results : [...current, ...list.results]));
       if (page === 1) setSummary(await linkApi.summary(params));
     } catch (cause) {
       setError(cause instanceof ApiError ? cause : new ApiError("Falha de rede.", 0));
@@ -257,11 +252,11 @@ function Card({
   onChanged,
   onQr,
 }: {
-  link: LinkDetail;
+  link: LinkListItem;
   onChanged: () => void;
   onQr: (code: string) => void;
 }) {
-  const state = linkState(link, link.statistics);
+  const state = linkState(link);
   const faded = state === "inactive";
   const dataInk = faded ? "var(--ink-disabled)" : undefined;
 
@@ -309,7 +304,7 @@ function Card({
 }
 
 /** Sem max_clicks: três colunas, com `—` no lugar do limite. */
-function Columns({ link }: { link: LinkDetail }) {
+function Columns({ link }: { link: LinkListItem }) {
   return (
     <div style={{ display: "flex", gap: 24 }}>
       <Stat label="Cliques" value={formatNumber(link.total_clicks)} />
@@ -351,7 +346,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 /** Com max_clicks: razão + barra de 6px, e a data de expiração quando existe. */
-function Progress({ link }: { link: LinkDetail }) {
+function Progress({ link }: { link: LinkListItem }) {
   const ratio = Math.min(1, link.unique_clicks / link.max_clicks);
 
   return (
@@ -393,7 +388,7 @@ function Actions({
   onChanged,
   onQr,
 }: {
-  link: LinkDetail;
+  link: LinkListItem;
   state: ReturnType<typeof linkState>;
   onChanged: () => void;
   onQr: (code: string) => void;

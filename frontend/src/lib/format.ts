@@ -53,21 +53,29 @@ export function toDateTimeLocal(value: string | null | undefined) {
 }
 
 /**
- * Estado visível do link, na mesma precedência de `can_be_accessed()`.
- * O serializador de lista não devolve expires_at/max_clicks, então nesse caso
- * a distinção entre expirado e limite vem de `status.message`.
+ * Estado visível do link, na mesma precedência de `can_be_accessed()`:
+ * inativo, depois expirado, depois limite atingido.
+ *
+ * Lista e detalhe trazem expires_at, então a distinção sai do dado — não de
+ * casar a mensagem de `status` por texto. `statistics`, quando existe, é a
+ * palavra final porque vem calculada pelo servidor.
  */
 export function linkState(
-  input: { is_active: boolean; status: LinkStatus },
+  input: {
+    is_active: boolean;
+    status: LinkStatus;
+    expires_at?: string | null;
+  },
   statistics?: LinkStatistics,
 ): LinkState {
   if (!input.is_active) return "inactive";
   if (input.status.can_access) return "active";
-  if (statistics) {
-    if (statistics.is_expired) return "expired";
-    if (statistics.has_reached_max_clicks) return "max_clicks";
-  }
-  return input.status.message.toLowerCase().includes("expirad") ? "expired" : "max_clicks";
+
+  const expired =
+    statistics?.is_expired ??
+    (input.expires_at ? new Date(input.expires_at).getTime() <= Date.now() : false);
+
+  return expired ? "expired" : "max_clicks";
 }
 
 export const STATE_LABEL: Record<LinkState, string> = {

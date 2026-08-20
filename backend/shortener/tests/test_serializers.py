@@ -100,6 +100,30 @@ class ShortenedURLListSerializerTest(TestCase):
         self.assertIn("status", data)
         self.assertTrue(data["is_active"])  # type: ignore
 
+    def test_serializer_includes_limit_fields(self):
+        """As fichas do painel dependem destes dois campos vindos da lista."""
+        expires_at = timezone.now() + timedelta(days=2)
+        url = ShortenedURL.objects.create(
+            original_url="https://example.com",
+            short_code="limits1",
+            expires_at=expires_at,
+            max_clicks=50,
+        )
+        data = ShortenedURLListSerializer(url).data
+
+        self.assertEqual(data["max_clicks"], 50)  # type: ignore
+        self.assertIsNotNone(data["expires_at"])  # type: ignore
+
+    def test_serializer_limit_fields_when_unset(self):
+        url = ShortenedURL.objects.create(
+            original_url="https://example.com",
+            short_code="limits2",
+        )
+        data = ShortenedURLListSerializer(url).data
+
+        self.assertEqual(data["max_clicks"], 0)  # type: ignore
+        self.assertIsNone(data["expires_at"])  # type: ignore
+
 
 class ShortenedURLDetailSerializerTest(TestCase):
     def test_serialize_url_with_clicks(self):
