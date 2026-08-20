@@ -1,0 +1,1103 @@
+/* ==========================================================================
+   Industry — folha única do design system EncurtadorControl.
+   Toda regra visual vive aqui. As telas usam apenas estas classes + layout
+   (display:flex / grid + gap). Nenhuma tela redefine estado ou cor.
+   ========================================================================== */
+
+/* --------------------------------------------------------------- 1. Tokens */
+
+:root {
+  /* Cor — base */
+  --color-bg: #f2f2f3;
+  --color-surface: #e9e9ea;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+
+  /* Cor — rampa de acento */
+  --color-accent-100: #e0e4ea;
+  --color-accent-200: #cad4df;
+  --color-accent-300: #afc0d1;
+  --color-accent-400: #84a0bc;
+  --color-accent-500: #5980a6;
+  --color-accent-600: #597ea3;
+  --color-accent-700: #416180;
+  --color-accent-800: #2c455d;
+  --color-accent-900: #1b2b3a;
+
+  /* Cor — rampa neutra */
+  --color-neutral-100: #f2f2f3;
+  --color-neutral-200: #ddddde;
+  --color-neutral-300: #c3c4c5;
+  --color-neutral-400: #a1a2a3;
+  --color-neutral-500: #7f8081;
+  --color-neutral-600: #616364;
+  --color-neutral-700: #48494a;
+  --color-neutral-800: #323435;
+  --color-neutral-900: #1d1f20;
+
+  /* Régua e borda: uma única tinta para todo hairline */
+  --color-divider: color-mix(in srgb, var(--color-text) 16%, transparent);
+
+  /* Regra de tinta — as telas nunca escrevem percentual solto */
+  --ink-body: var(--color-text);
+  --ink-secondary: color-mix(in srgb, var(--color-text) 78%, transparent);
+  --ink-small: color-mix(in srgb, var(--color-text) 70%, transparent);
+  /* Registro secundario das telas de lista: coluna Criado, notas de ordenacao,
+     dt da placa de resultado, rotulos de numero na ficha. */
+  --ink-meta: color-mix(in srgb, var(--color-text) 60%, transparent);
+  --ink-disabled: color-mix(in srgb, var(--color-text) 55%, transparent);
+
+  /* Tipografia */
+  --font-heading: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+
+  /* Espaço — ritmo de 24px, meio-passo 12px */
+  --space-half: 12px;
+  --space: 24px;
+  --space-2: 48px;
+  --gutter: 48px;
+  --cell-gap: 40px;
+  --measure: 1280px;
+
+  /* Elevacao */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--color-text) 10%, transparent);
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--color-text) 12%, transparent);
+  --shadow-lg: 0 8px 24px color-mix(in srgb, var(--color-text) 14%, transparent);
+
+  /* Alvo de toque */
+  --control-h: 38px;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --gutter: 20px;
+    --cell-gap: 28px;
+    --control-h: 44px;
+  }
+}
+
+/* ---------------------------------------------------------------- 2. Base */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-radius: 0; /* nada é arredondado neste sistema */
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--ink-body);
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.06;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+/* Números em coluna ou comparados */
+.tnum {
+  font-feature-settings: "tnum" 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------- 3. Papéis de texto */
+
+.kicker {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent-700);
+}
+
+.display {
+  font-size: 66px;
+  line-height: 69px;
+  letter-spacing: 0.01em;
+  /* Puxa a primeira haste para a regua da coluna. */
+  margin-left: -0.052em;
+}
+
+.title-screen {
+  font-size: 38px;
+  line-height: 40px;
+}
+
+.stat-value {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 38px;
+  letter-spacing: 0.02em;
+  font-feature-settings: "tnum" 1;
+}
+
+.stat-label,
+.label {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-small);
+}
+
+.code {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 26px;
+  letter-spacing: 0.02em;
+}
+
+.code-lg {
+  font-size: 24px;
+  line-height: 28px;
+}
+
+.lede {
+  font-size: 16px;
+  line-height: 26px;
+  color: var(--ink-secondary);
+}
+
+.small {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-small);
+}
+
+.muted {
+  color: var(--ink-disabled);
+}
+
+.break {
+  word-break: break-all;
+}
+
+@media (max-width: 900px) {
+  .display {
+    font-size: 38px;
+    line-height: 40px;
+    /* Sem o recuo óptico do desktop: em 390px ele corta a haste. */
+    margin-left: 0;
+  }
+
+  .title-screen {
+    font-size: 30px;
+    line-height: 32px;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    line-height: 36px;
+  }
+}
+
+/* ---------------------------------------------------------- 4. Enquadramento */
+
+.shell {
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* Bloco emoldurado — desenho de linha, nunca preenchido */
+.blueprint {
+  position: relative;
+  border: 1px solid var(--color-divider);
+  background: transparent;
+}
+
+/* Marcas de registro: '+' de 14px centrado no canto, avançando 7px para fora.
+   O deslocamento é 8px porque `position:absolute` parte da padding box —
+   1px de borda + 7px de avanço. */
+.corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  color: var(--ink-disabled);
+  pointer-events: none;
+}
+
+.corner::before,
+.corner::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+
+.corner::before {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.corner::after {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.corner.tl {
+  top: -8px;
+  left: -8px;
+}
+
+.corner.tr {
+  top: -8px;
+  right: -8px;
+}
+
+.corner.bl {
+  bottom: -8px;
+  left: -8px;
+}
+
+.corner.br {
+  bottom: -8px;
+  right: -8px;
+}
+
+/* Title block — cabeçalho do bloco emoldurado */
+.plate-head {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.plate-title {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 20px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.plate-cell {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-left: 1px solid var(--color-divider);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-small);
+  font-feature-settings: "tnum" 1;
+}
+
+.plate-body {
+  padding: var(--space);
+}
+
+.plate-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-half);
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-divider);
+}
+
+/* Régua solta */
+.rule {
+  border: 0;
+  border-top: 1px solid var(--color-divider);
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ 5. Nav */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  padding: 16px var(--gutter);
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-bg);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-small);
+}
+
+.nav-link:hover {
+  color: var(--ink-body);
+}
+
+.nav-link[aria-current="page"] {
+  color: var(--color-accent-700);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
+}
+
+/* Menu mobile — o seletor precisa de .nav para vencer o `display` de .btn,
+   que é definido mais adiante na folha com a mesma especificidade. */
+.nav .nav-toggle {
+  display: none;
+  margin-left: auto;
+}
+
+@media (max-width: 900px) {
+  .nav {
+    flex-wrap: wrap;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .nav .nav-toggle {
+    display: inline-flex;
+  }
+
+  .nav-links {
+    display: none;
+    width: 100%;
+    margin-left: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    border-top: 1px solid var(--color-divider);
+  }
+
+  .nav-links[data-open="true"] {
+    display: flex;
+  }
+
+  .nav-link {
+    height: 44px;
+    padding: 0;
+    border-bottom: 1px solid var(--color-divider);
+  }
+
+  .nav-link:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* --------------------------------------------------------------- 6. Botões */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--control-h);
+  padding: 0 16px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-body);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 120ms linear,
+    color 120ms linear,
+    border-color 120ms linear;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  /* Papel cheio. Branco puro ou acento clareado lava o rotulo sobre o aco. */
+  color: var(--color-bg);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-600);
+  border-color: var(--color-accent-600);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--color-accent-700);
+  border-color: var(--color-accent-700);
+}
+
+.btn-secondary {
+  border-color: var(--color-divider);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-text);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background: var(--color-surface);
+}
+
+.btn-ghost {
+  padding: 0 8px;
+  color: var(--ink-small);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--ink-body);
+}
+
+.btn-icon {
+  width: var(--control-h);
+  height: var(--control-h);
+  padding: 0;
+  border-color: var(--color-divider);
+  color: var(--ink-small);
+}
+
+.btn-icon:hover:not(:disabled) {
+  border-color: var(--color-text);
+  color: var(--ink-body);
+}
+
+/* Combinacao usada nas acoes de linha: quadrado, sem moldura. */
+.btn-icon.btn-ghost {
+  padding: 0;
+  border-color: transparent;
+}
+
+.btn-icon.btn-ghost:hover:not(:disabled) {
+  border-color: transparent;
+  color: var(--ink-body);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------- 7. Campos */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field > label {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-small);
+}
+
+.field-hint {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-meta);
+}
+
+.input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 12px;
+  border: 1px solid var(--color-divider);
+  background: var(--color-surface);
+  color: var(--ink-body);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.input::placeholder {
+  color: var(--ink-disabled);
+}
+
+.input:hover:not(:disabled) {
+  border-color: var(--color-neutral-400);
+}
+
+.input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--color-accent-800);
+}
+
+/* Mensagem de validação — hierarquia e cópia, nunca cor nova */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 7px 0 0;
+  color: var(--color-accent-800);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.form-error svg {
+  flex: none;
+}
+
+/* ---------------------------------------------------------- 8. Segmentado */
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--color-divider);
+}
+
+.seg-opt {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 14px;
+  border: 0;
+  border-left: 1px solid var(--color-divider);
+  background: transparent;
+  color: var(--ink-small);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* O rotulo cobre um radio real: teclado e leitor de tela vem de graca. */
+.seg-opt > input[type="radio"] {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seg-opt:first-child {
+  border-left: 0;
+}
+
+.seg-opt:hover {
+  color: var(--ink-body);
+}
+
+.seg-opt[aria-pressed="true"],
+.seg-opt:has(> input[type="radio"]:checked) {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.seg-opt:has(> input[type="radio"]:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------- 9. Tabelas */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-feature-settings: "tnum" 1;
+}
+
+.table th {
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--color-divider);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--ink-small);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-divider);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+}
+
+.table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Linha de item inativo — codigo, destino, numeros e data a 55%.
+   .tag e .btn declaram cor propria, entao nao herdam e seguem legiveis. */
+.table tr[data-inactive="true"] td {
+  color: var(--ink-disabled);
+}
+
+/* Célula que precisa truncar (original_url) */
+.truncate {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* ---------------------------------------------------------------- 10. Tags */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tag-accent {
+  background: var(--color-accent-200);
+  border-color: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.tag-outline {
+  border-color: var(--color-divider);
+  color: var(--ink-small);
+}
+
+.tag-neutral {
+  background: var(--color-neutral-200);
+  border-color: var(--color-neutral-200);
+  color: var(--ink-small);
+}
+
+/* --------------------------------------------------------- 11. Progresso */
+
+.meter {
+  height: 6px;
+  background: var(--color-neutral-200);
+}
+
+.meter > i {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.meter[data-full="true"] > i {
+  background: var(--color-accent-800);
+}
+
+/* Gráfico de colunas — derivado de recent_clicks[].clicked_at */
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 132px;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.bars > div {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+  height: 100%;
+}
+
+.bars > div > i {
+  display: block;
+  width: 100%;
+  min-height: 1px;
+  background: var(--color-accent);
+}
+
+.bars-axis {
+  display: flex;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.bars-axis > span {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 14px;
+  color: var(--ink-small);
+  font-feature-settings: "tnum" 1;
+}
+
+/* --------------------------------------------------------- 12. Dialogo */
+
+/* O dialogo e um objeto solido — nao e desenho de linha, nao leva .blueprint
+   nem marcas de canto. */
+.dialog {
+  width: min(var(--dialog-w, 600px), calc(100vw - 40px));
+  padding: 0;
+  border: 1px solid var(--color-divider);
+  background: var(--color-bg);
+  color: var(--ink-body);
+  box-shadow: var(--shadow-lg);
+}
+
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+
+.dialog-head {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.dialog-title {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 20px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 20px;
+}
+
+.dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-divider);
+}
+
+/* ----------------------------------------------------------- 13. Duotone */
+
+.duotone {
+  filter: grayscale(1) contrast(1.1);
+  mix-blend-mode: multiply;
+}
+
+/* ------------------------------------------------------------ 13. Grades */
+
+.grid {
+  display: grid;
+  gap: var(--cell-gap);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Divisao de celulas dentro de uma placa (estatisticas, resumo da conta):
+   4 colunas no desktop, 2 no mobile — nunca uma coluna so. */
+.cells-4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grid-8-4 {
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+}
+
+.grid-7-5 {
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+}
+
+@media (max-width: 900px) {
+  .grid-2,
+  .grid-3,
+  .grid-8-4,
+  .grid-7-5 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cells-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* A terceira e a quarta celula ganham regua de cima ao caírem de linha. */
+  .cells-4 > :nth-child(odd) {
+    border-left: 0;
+  }
+
+  .cells-4 > :nth-child(n + 3) {
+    border-top: 1px solid var(--color-divider);
+  }
+}
+
+/* Linha de estatísticas dentro de uma placa, dividida por hairlines */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stat-cell {
+  padding: 20px;
+  border-left: 1px solid var(--color-divider);
+}
+
+.stat-cell:first-child {
+  border-left: 0;
+}
+
+@media (max-width: 620px) {
+  .stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat-cell:nth-child(odd) {
+    border-left: 0;
+  }
+
+  .stat-cell:nth-child(n + 3) {
+    border-top: 1px solid var(--color-divider);
+  }
+}
+
+/* ------------------------------------------------- 14. Mobile (1h, <900px) */
+
+@media (max-width: 900px) {
+  /* Nav: marca menor, hamburger de 44px — o único lugar onde ele existe. */
+  .nav {
+    padding: 14px 20px;
+    gap: 12px;
+  }
+
+  .nav-brand {
+    font-size: 16px;
+  }
+
+  .nav .nav-toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Barra do painel no mobile: título + busca + Novo. */
+  .nav-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+  }
+
+  .nav-search {
+    width: 100%;
+    padding: 0 20px 14px;
+  }
+
+  .nav-search .input {
+    height: 48px;
+    min-height: 48px;
+  }
+
+  /* Segmentado ocupa a largura toda, cada opção com alvo de 44px. */
+  .seg {
+    display: flex;
+    width: 100%;
+  }
+
+  .seg-opt {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* Campo + ação empilhados (landing). */
+  .stack-mobile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* Ações lado a lado dividindo a largura. */
+  .split-mobile > * {
+    flex: 1;
+  }
+}
+
+/* Colunas que somem em 390px (1d reduzida a IP + horário)… */
+@media (max-width: 900px) {
+  .hide-mobile {
+    display: none;
+  }
+}
+
+/* …e o que elas carregavam volta como linha secundária. */
+.show-mobile {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .show-mobile {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 17px;
+    color: var(--ink-small);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Nenhuma .table no mobile: as telas trocam por fichas. */
+@media (max-width: 900px) {
+  .table-scroll {
+    overflow-x: visible;
+  }
+}
+
+/* -------------------------------------------------------- 15. Utilitários */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-half);
+}
+
+.row-wrap {
+  flex-wrap: wrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Só o eixo vertical: em `.shell .page` o shorthand zeraria o gutter do .shell. */
+.page {
+  padding-top: var(--space-2);
+  padding-bottom: 96px;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding-top: var(--space);
+    padding-bottom: 64px;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

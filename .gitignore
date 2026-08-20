@@ -8,18 +8,20 @@ __pycache__/
 .env/
 venv/
 ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+# Ancorados na raiz: sem a barra inicial, `lib/` engolia frontend/src/lib/
+# e `build/`/`dist/` pegariam qualquer diretorio homonimo do frontend.
+/build/
+/develop-eggs/
+/dist/
+/downloads/
+/eggs/
+/.eggs/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+/wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -64,6 +66,3 @@ frontend/dist/
 
 # Windows download metadata copied as regular files
 *:Zone.Identifier
-
-# Design System
-design.md

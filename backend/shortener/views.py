@@ -7,7 +7,7 @@ Este módulo contém ViewSets e visualizações para gerenciar URLs encurtadas, 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
@@ -163,23 +163,91 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
         )
 
 
+# Cópia das quatro páginas públicas de bloqueio (1g). O destino nunca aparece.
+BLOCKED_PAGES = {
+    "inactive": {
+        "title": "Link inativo",
+        "message": (
+            "Este link foi desativado por quem o criou. O destino não é revelado e o "
+            "acesso não entra na contagem de cliques."
+        ),
+        "primary_label": "Encurtar meu próprio link",
+    },
+    "expired": {
+        "title": "Link expirado",
+        "message": (
+            "A data de expiração definida na criação já passou. O link continua no "
+            "painel de quem o criou, com o histórico de cliques preservado."
+        ),
+        "primary_label": "Encurtar meu próprio link",
+    },
+    "max_clicks": {
+        "title": "Limite de cliques atingido",
+        "message": "O link aceitava um número máximo de visitantes únicos e esse teto foi alcançado.",
+        "primary_label": "Encurtar meu próprio link",
+    },
+    "not_found": {
+        "title": "Código não encontrado",
+        "message": (
+            "O código informado não corresponde a nenhuma URL cadastrada. Confira se "
+            "ele foi copiado por inteiro — códigos diferenciam maiúsculas de "
+            "minúsculas."
+        ),
+        "primary_label": "Ir para o encurtador",
+    },
+}
+
+
+def _wants_html(request):
+    """Navegador recebe a página; cliente de API continua recebendo JSON."""
+    return "text/html" in request.headers.get("Accept", "")
+
+
+def _blocked_response(request, kind, short_code, http_status, url=None):
+    """
+    Resposta de bloqueio com o status HTTP real — nunca 200 com página de erro.
+    O template só recebe dado público: nada de original_url.
+    """
+    context = {
+        **BLOCKED_PAGES[kind],
+        "kind": kind,
+        "http_status": http_status,
+        "short_code": short_code,
+        "home_url": request.build_absolute_uri("/"),
+    }
+
+    if url is not None:
+        context["expires_at"] = url.expires_at
+        context["unique_clicks"] = url.unique_clicks
+        context["max_clicks"] = url.max_clicks
+
+    if _wants_html(request):
+        return render(request, "shortener/blocked.html", context, status=http_status)
+
+    return JsonResponse(
+        {"error": context["title"], "short_code": short_code},
+        status=http_status,
+    )
+
+
 @csrf_exempt
 def redirect_shortened_url(request, short_code):
     try:
         url = ShortenedURL.objects.get(short_code=short_code)
     except ObjectDoesNotExist:
-        return JsonResponse(
-            {"error": "URL encurtada nao encontrado", "short_code": short_code},
-            status=404,
-        )
+        return _blocked_response(request, "not_found", short_code, 404)
 
-    can_access, message = url.can_be_accessed()
+    can_access, _message = url.can_be_accessed()
 
     if not can_access:
-        return JsonResponse(
-            {"error": message, "short_code": short_code},
-            status=403,
-        )
+        # Mesma precedência de can_be_accessed().
+        if not url.is_active:
+            kind = "inactive"
+        elif url.is_expired():
+            kind = "expired"
+        else:
+            kind = "max_clicks"
+        return _blocked_response(request, kind, short_code, 403, url=url)
 
     ip_address = get_client_ip(request)
     user_agent = request.META.get("HTTP_USER_AGENT", "")

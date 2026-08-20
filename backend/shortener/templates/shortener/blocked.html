@@ -1,0 +1,62 @@
+{% load static %}<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#f2f2f3" />
+    <title>{{ title }} — EncurtadorControl</title>
+    <link rel="stylesheet" href="{% static 'shortener/blocked.css' %}" />
+  </head>
+  <body>
+    {# Publica: quem chega aqui nao conhece o produto. Sem nav de painel e, #}
+    {# acima de tudo, sem original_url em lugar nenhum. #}
+    <main class="card">
+      <div class="kicker-row">
+        <span class="kicker">HTTP {{ http_status }}</span>
+        <hr />
+      </div>
+
+      <h1>{{ title }}</h1>
+
+      <p>{{ message }}</p>
+
+      {% if kind == "max_clicks" %}
+        <div class="strip meter-strip">
+          <div class="meter-head">
+            <span>Cliques únicos</span>
+            <span>{{ unique_clicks }} / {{ max_clicks }}</span>
+          </div>
+          <div class="meter"><i style="width: 100%"></i></div>
+        </div>
+      {% else %}
+        <div class="strip">
+          {% if kind == "not_found" %}
+            <div>
+              <span class="label">Tentado</span>
+              <span class="code">{{ short_code }}</span>
+            </div>
+          {% else %}
+            <div>
+              <span class="label">Código</span>
+              <span class="code">{{ short_code }}</span>
+            </div>
+          {% endif %}
+          {% if kind == "expired" %}
+            <div>
+              <span class="label">Expirou em</span>
+              <span class="tnum">{{ expires_at|date:"d/m/Y · H:i" }}</span>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <div class="actions">
+        <a class="btn btn-primary" href="{{ home_url }}">{{ primary_label }}</a>
+        {% if kind == "inactive" %}
+          <a class="btn btn-ghost" href="{{ home_url }}">Falar com quem criou</a>
+        {% endif %}
+      </div>
+    </main>
+  </body>
+</html>

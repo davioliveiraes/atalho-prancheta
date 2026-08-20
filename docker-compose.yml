@@ -77,6 +77,8 @@ services:
       - "${FRONTEND_PORT:-5173}:5173"
     environment:
       VITE_PROXY_TARGET: http://backend:8000
+      # Bind mount Windows -> Linux nao propaga inotify; sem isso o HMR nao ve edicoes.
+      VITE_USE_POLLING: "true"
     depends_on:
       backend:
         condition: service_started

@@ -1,0 +1,238 @@
+/* ==========================================================================
+   Industry — recorte para as páginas públicas de redirecionamento bloqueado.
+
+   Estas quatro páginas são renderizadas pelo Django (e não pela SPA) porque a
+   1g exige o status HTTP real na resposta. Como o Django não tem acesso ao
+   bundle do Vite, os tokens abaixo são um ESPELHO de
+   `frontend/src/styles/styles.css` — mantenha os dois em sincronia. Só entram
+   aqui as regras que estas páginas usam.
+   ========================================================================== */
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/barlow-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/barlow-condensed-latin-600-normal.woff2") format("woff2");
+}
+
+:root {
+  --color-bg: #f2f2f3;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+  --color-accent-600: #597ea3;
+  --color-accent-700: #416180;
+  --color-neutral-900: #1d1f20;
+
+  --color-divider: color-mix(in srgb, var(--color-text) 16%, transparent);
+  --ink-secondary: color-mix(in srgb, var(--color-text) 78%, transparent);
+  --ink-small: color-mix(in srgb, var(--color-text) 70%, transparent);
+  --ink-meta: color-mix(in srgb, var(--color-text) 60%, transparent);
+
+  --font-heading: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-radius: 0;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 20px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 24px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Bloco central. Objeto sólido: não é desenho de linha, não leva marcas. */
+.card {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 56px 48px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 620px) {
+  .card {
+    padding: 32px 20px;
+  }
+}
+
+.kicker-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.kicker {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent-700);
+  font-feature-settings: "tnum" 1;
+}
+
+.kicker-row hr {
+  flex: 1;
+  border: 0;
+  border-top: 1px solid var(--color-divider);
+  margin: 0;
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 42px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+p {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--ink-secondary);
+}
+
+/* Faixa de dados, entre duas réguas. Só dado público. */
+.strip {
+  display: flex;
+  gap: 40px;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-divider);
+  font-size: 13px;
+}
+
+.strip > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.strip .label {
+  color: var(--ink-meta);
+}
+
+.strip .code {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+.strip .tnum {
+  font-feature-settings: "tnum" 1;
+}
+
+/* Medidor da página de limite atingido. */
+.strip.meter-strip {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meter-head {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-small);
+  font-feature-settings: "tnum" 1;
+}
+
+.meter {
+  height: 6px;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.meter > i {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 120ms linear,
+    color 120ms linear,
+    border-color 120ms linear;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-600);
+  border-color: var(--color-accent-600);
+}
+
+.btn-ghost {
+  padding: 0 8px;
+  color: var(--ink-small);
+}
+
+.btn-ghost:hover {
+  color: var(--color-text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
