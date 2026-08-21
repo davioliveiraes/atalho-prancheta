@@ -57,7 +57,10 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
 
   if (loading && !detail) {
     return (
-      <main className="shell" style={{ paddingTop: 32, paddingBottom: 56 }}>
+      <main
+        className="shell screen"
+        style={{ paddingTop: 32, paddingBottom: 56, justifyContent: "center" }}
+      >
         <p className="small">Carregando…</p>
       </main>
     );
@@ -65,7 +68,10 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
 
   if (!detail || !stats) {
     return (
-      <main className="shell stack" style={{ paddingTop: 32, paddingBottom: 56, gap: 24 }}>
+      <main
+        className="shell stack screen"
+        style={{ paddingTop: 32, paddingBottom: 56, gap: 24, justifyContent: "center" }}
+      >
         <p className="kicker">{error?.status ? `HTTP ${error.status}` : "Erro"}</p>
         <h2 style={{ fontSize: 34 }}>{error?.message ?? "Link não encontrado"}</h2>
         <div>
@@ -82,7 +88,7 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
   const peak = Math.max(1, ...series.map((point) => point.value));
 
   return (
-    <main className="shell stack" style={{ paddingTop: 32, paddingBottom: 56, gap: 28 }}>
+    <main className="shell stack screen" style={{ paddingTop: 32, paddingBottom: 56, gap: 28 }}>
       <nav
         aria-label="Trilha"
         style={{ fontSize: 13, lineHeight: "20px", color: "var(--ink-meta)" }}
