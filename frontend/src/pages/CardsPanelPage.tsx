@@ -69,7 +69,7 @@ export function CardsPanelPage() {
   const remaining = Math.max(0, total - cards.length);
 
   return (
-    <main className="shell stack" style={{ paddingTop: 40, paddingBottom: 56, gap: 28 }}>
+    <main className="shell stack screen" style={{ paddingTop: 40, paddingBottom: 56, gap: 28 }}>
       <Plate title="Resumo da conta" cells={["Todo o período"]}>
         <div className="cells-4">
           <SummaryCell label="Links" value={summary?.links} first />
@@ -141,8 +141,16 @@ export function CardsPanelPage() {
       </div>
 
       {error ? (
-        <Plate>
-          <div className="stack" style={{ padding: "56px 20px", gap: 12, alignItems: "center" }}>
+        <Plate className="screen-grow">
+          <div
+            className="stack"
+            style={{
+              padding: "56px 20px",
+              gap: 12,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <p className="kicker">{error.status ? `HTTP ${error.status}` : "Sem resposta"}</p>
             <h3 style={{ fontSize: 22 }}>Não foi possível carregar</h3>
             <button type="button" className="btn btn-secondary" onClick={() => void load()}>
@@ -151,8 +159,16 @@ export function CardsPanelPage() {
           </div>
         </Plate>
       ) : cards.length === 0 && !loading ? (
-        <Plate>
-          <div className="stack" style={{ padding: "56px 20px", gap: 12, alignItems: "center" }}>
+        <Plate className="screen-grow">
+          <div
+            className="stack"
+            style={{
+              padding: "56px 20px",
+              gap: 12,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <h3 style={{ fontSize: 22 }}>
               {term ? `Nada encontrado para “${term}”` : "Nenhum link ainda"}
             </h3>
