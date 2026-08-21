@@ -95,3 +95,31 @@ export interface UpdateLinkPayload {
 
 /** Os quatro estados visíveis, na ordem de precedência de can_be_accessed() */
 export type LinkState = "active" | "inactive" | "expired" | "max_clicks";
+
+/** UserSerializer de `accounts/serializers.py` */
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  date_joined: string;
+}
+
+/** Corpo devolvido por /auth/register/ e /auth/login/ */
+export interface AuthSession {
+  access: string;
+  refresh: string;
+  user: AuthUser;
+}
+
+/** Campos aceitos por RegisterSerializer */
+export interface RegisterPayload {
+  name?: string;
+  email: string;
+  password: string;
+  password_confirm: string;
+}
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}

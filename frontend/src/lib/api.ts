@@ -1,10 +1,15 @@
+import { clearSession, getSession, setTokens } from "./session";
 import type {
+  AuthSession,
+  AuthUser,
   CreateLinkPayload,
   LinkDetail,
   LinkListItem,
   LinkStatisticsResponse,
+  LoginPayload,
   Paginated,
   QrCodeResponse,
+  RegisterPayload,
   UpdateLinkPayload,
 } from "../types";
 
@@ -27,6 +32,15 @@ export class ApiError extends Error {
   /** Primeira mensagem de um campo, ou undefined. */
   field(name: string): string | undefined {
     return this.fields[name]?.[0];
+  }
+
+  /**
+   * Todas as mensagens de um campo. Os validadores de senha do Django
+   * respondem várias de uma vez ("muito comum" e "inteiramente numérica"), e
+   * mostrar só a primeira faria o usuário corrigir uma de cada vez.
+   */
+  list(name: string): string[] {
+    return this.fields[name] ?? [];
   }
 }
 
@@ -53,14 +67,79 @@ function parseErrorBody(body: unknown): { message: string; fields: Record<string
   return { message: single ?? first ?? "", fields };
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_ROOT}${path}`, {
-    ...options,
+interface RequestOptions extends RequestInit {
+  /**
+   * Não manda token nem tenta renovar em caso de 401. É o que as próprias
+   * rotas de conta usam — entrar, cadastrar e renovar não dependem de sessão,
+   * e deixar a renovação tentar se renovar seria uma volta sem fim.
+   */
+  anonymous?: boolean;
+}
+
+function send(path: string, options: RequestOptions) {
+  const { anonymous, ...init } = options;
+  const session = anonymous ? null : getSession();
+
+  return fetch(`${API_ROOT}${path}`, {
+    ...init,
     headers: {
       "Content-Type": "application/json",
-      ...options?.headers,
+      ...(session ? { Authorization: `Bearer ${session.access}` } : {}),
+      ...init.headers,
     },
   });
+}
+
+/**
+ * Uma renovação por vez.
+ *
+ * O painel dispara várias requisições juntas; se cada 401 renovasse por conta
+ * própria, a segunda usaria um refresh que a primeira já tinha rotacionado —
+ * e o backend responderia "token na blacklist", derrubando a sessão de quem
+ * ainda estava dentro do prazo.
+ */
+let renewal: Promise<boolean> | null = null;
+
+function renewSession(): Promise<boolean> {
+  if (!renewal) {
+    renewal = runRenewal();
+    void renewal.finally(() => {
+      renewal = null;
+    });
+  }
+  return renewal;
+}
+
+async function runRenewal(): Promise<boolean> {
+  const session = getSession();
+  if (!session) return false;
+
+  try {
+    const renewed = await request<{ access: string; refresh?: string }>("/auth/refresh/", {
+      method: "POST",
+      body: JSON.stringify({ refresh: session.refresh }),
+      anonymous: true,
+    });
+    setTokens(renewed.access, renewed.refresh ?? session.refresh);
+    return true;
+  } catch {
+    // Refresh vencido, rotacionado ou invalidado no logout: acabou a sessão.
+    // Quem observa o armazenamento (a nav e a guarda de rota) reage sozinho.
+    clearSession();
+    return false;
+  }
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  let response = await send(path, options);
+
+  // 401 com sessão guardada quase sempre é access vencido — 30 minutos. Renova
+  // uma vez e repete a requisição; o corpo é string, dá para reenviar.
+  if (response.status === 401 && !options.anonymous && getSession()) {
+    if (await renewSession()) {
+      response = await send(path, options);
+    }
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
@@ -92,6 +171,39 @@ export interface LinkSummary {
   unique: number;
   down: number;
 }
+
+export const authApi = {
+  /** POST /api/auth/register/ — 201 já devolve o par de tokens */
+  register(payload: RegisterPayload): Promise<AuthSession> {
+    return request<AuthSession>("/auth/register/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      anonymous: true,
+    });
+  },
+
+  /** POST /api/auth/login/ */
+  login(payload: LoginPayload): Promise<AuthSession> {
+    return request<AuthSession>("/auth/login/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      anonymous: true,
+    });
+  },
+
+  /** POST /api/auth/logout/ — invalida o refresh no servidor */
+  logout(refresh: string): Promise<void> {
+    return request<void>("/auth/logout/", {
+      method: "POST",
+      body: JSON.stringify({ refresh }),
+    });
+  },
+
+  /** GET /api/auth/me/ */
+  me(): Promise<AuthUser> {
+    return request<AuthUser>("/auth/me/");
+  },
+};
 
 export const linkApi = {
   /** GET /api/urls/?search=&is_active=&page= */

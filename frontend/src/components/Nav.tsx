@@ -1,7 +1,8 @@
 import { Grid, Menu, Search, X } from "lucide-react";
 import { type MouseEvent, useState } from "react";
+import { useAuth } from "../lib/auth";
 import { useMobileBar } from "../lib/mobileBar";
-import { Link, usePathname } from "../lib/router";
+import { Link, navigate, usePathname } from "../lib/router";
 import { useIsMobile } from "../lib/useIsMobile";
 
 /**
@@ -15,11 +16,17 @@ function pending(event: MouseEvent<HTMLElement>) {
   event.preventDefault();
 }
 
+/** Nome curto da conta: o primeiro nome, ou o e-mail antes do arroba. */
+function accountLabel(name: string, email: string) {
+  return name.trim().split(/\s+/)[0] || email.split("@")[0];
+}
+
 export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const mobile = useIsMobile();
   const bar = useMobileBar();
+  const { user, signOut } = useAuth();
 
   // No painel, abaixo de 900px, a barra é título + busca + Novo.
   if (mobile && bar) {
@@ -90,15 +97,49 @@ export function Nav() {
         <a className="nav-link" href="#" onClick={pending}>
           API
         </a>
-        {/* Pendente: autenticação — o backend ainda não expõe login/registro. */}
-        <a className="nav-link" href="#" onClick={pending}>
-          Entrar
-        </a>
-        {/* Secundário de propósito: assim o único primário de cada tela é a
-            ação da própria tela (Encurtar, Novo link, Criar link…). */}
-        <button type="button" className="btn btn-secondary" onClick={pending}>
-          Criar conta
-        </button>
+
+        {user ? (
+          <>
+            {/* Quem entrou: a conta identificada e a saída. O nome nao e link
+                porque nao ha tela de perfil para onde ir. */}
+            <span className="nav-link" style={{ color: "var(--ink-body)" }}>
+              {accountLabel(user.name, user.email)}
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setOpen(false);
+                void signOut();
+              }}
+            >
+              Sair
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              className="nav-link"
+              to="/entrar"
+              aria-current={pathname === "/entrar" ? "page" : undefined}
+              onClick={() => setOpen(false)}
+            >
+              Entrar
+            </Link>
+            {/* Secundário de propósito: assim o único primário de cada tela é a
+                ação da própria tela (Encurtar, Novo link, Criar link…). */}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setOpen(false);
+                navigate("/criar-conta");
+              }}
+            >
+              Criar conta
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );

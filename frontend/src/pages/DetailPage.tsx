@@ -4,6 +4,7 @@ import { Dialog } from "../components/Dialog";
 import { Plate } from "../components/Plate";
 import { ErrorLine, StateTag } from "../components/elements";
 import { ApiError, linkApi } from "../lib/api";
+import { useSession } from "../lib/auth";
 import {
   STATE_LABEL,
   clicksByDay,
@@ -21,6 +22,7 @@ import type { LinkDetail, LinkStatisticsResponse } from "../types";
 const WINDOWS = [7, 14, 30] as const;
 
 export function DetailPage({ shortCode }: { shortCode: string }) {
+  const session = useSession();
   const [detail, setDetail] = useState<LinkDetail | null>(null);
   const [stats, setStats] = useState<LinkStatisticsResponse | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -67,17 +69,41 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
   }
 
   if (!detail || !stats) {
+    // 401 aqui é link de alguma conta aberto por quem não entrou. A frase da
+    // API ("As credenciais de autenticação não foram fornecidas") descreve o
+    // protocolo, não a situação — e mandar essa pessoa ao painel seria um beco.
+    const unauthorized = error?.status === 401;
+
     return (
       <main
         className="shell stack screen"
         style={{ paddingTop: 32, paddingBottom: 56, gap: 24, justifyContent: "center" }}
       >
         <p className="kicker">{error?.status ? `HTTP ${error.status}` : "Erro"}</p>
-        <h2 style={{ fontSize: 34 }}>{error?.message ?? "Link não encontrado"}</h2>
-        <div>
-          <Link className="btn btn-secondary" to="/painel">
-            Voltar ao painel
-          </Link>
+        <h2 style={{ fontSize: 34 }}>
+          {unauthorized ? "Este link pertence a uma conta" : (error?.message ?? "Link não encontrado")}
+        </h2>
+        {unauthorized && (
+          <p style={{ fontSize: 15, lineHeight: "24px", color: "var(--ink-secondary)", maxWidth: "56ch" }}>
+            Entre com a conta que criou o link para ver os cliques, o QR Code e as
+            configurações dele.
+          </p>
+        )}
+        <div className="row">
+          {unauthorized ? (
+            <>
+              <Link className="btn btn-primary" to="/entrar">
+                Entrar
+              </Link>
+              <Link className="btn btn-secondary" to="/">
+                Encurtar meu próprio link
+              </Link>
+            </>
+          ) : (
+            <Link className="btn btn-secondary" to={session ? "/painel" : "/"}>
+              {session ? "Voltar ao painel" : "Voltar ao início"}
+            </Link>
+          )}
         </div>
       </main>
     );

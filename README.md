@@ -184,6 +184,8 @@ docker compose exec backend python manage.py adotar_links voce@exemplo.com
 
 7. **Acesse a aplicação**
 - Frontend: http://localhost:5173/
+- Criar conta: http://localhost:5173/criar-conta — o painel (`/painel`) exige conta;
+  encurtar na home continua aberto
 - API: http://localhost:8000/api/urls/
 - Admin: http://localhost:8000/admin/
 
