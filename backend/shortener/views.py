@@ -6,13 +6,14 @@ Este módulo contém ViewSets e visualizações para gerenciar URLs encurtadas, 
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, Q
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import Http404, JsonResponse
+from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from .models import Click, ShortenedURL
@@ -46,6 +47,20 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
 
     queryset = ShortenedURL.objects.all()
     lookup_field = "short_code"
+
+    def get_object(self):
+        """
+        Traduz o 404 da busca pelo short_code.
+
+        O Http404 do Django carrega "No ShortenedURL matches the given query." e o
+        DRF repassa essa frase como `detail`, que a interface exibe ao usuario.
+        Vale para todas as rotas de detalhe, inclusive as acoes personalizadas,
+        porque todas passam por aqui.
+        """
+        try:
+            return super().get_object()
+        except Http404:
+            raise NotFound("Nenhum link cadastrado com este código.")
 
     def get_serializer_class(self):
         if self.action == "list":

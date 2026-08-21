@@ -87,6 +87,31 @@ class ShortenedURLViewSetTest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+    def test_not_found_message_is_in_portuguese(self):
+        """
+        O `detail` do 404 chega ate a tela de detalhe do link, entao nao pode ser
+        a frase padrao do Django ("No ShortenedURL matches the given query.").
+        """
+        url = reverse("shortened-url-detail", kwargs={"short_code": "notfound"})
+        response = self.client.get(url)
+
+        detail = str(response.data["detail"])  # type: ignore
+        self.assertEqual(detail, "Nenhum link cadastrado com este código.")
+        self.assertNotIn("ShortenedURL", detail)
+
+    def test_custom_actions_share_the_translated_not_found(self):
+        """As acoes personalizadas passam pelo mesmo get_object()."""
+        for suffix in ["statistics", "qrcode", "activate", "deactivate"]:
+            with self.subTest(acao=suffix):
+                method = self.client.get if suffix in ("statistics", "qrcode") else self.client.post
+                response = method(f"/api/urls/notfound/{suffix}/")
+
+                self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+                self.assertEqual(
+                    str(response.data["detail"]),  # type: ignore
+                    "Nenhum link cadastrado com este código.",
+                )
+
     def test_update_url(self):
         url = reverse("shortened-url-detail", kwargs={"short_code": "test1"})
         data = {"is_active": False}
