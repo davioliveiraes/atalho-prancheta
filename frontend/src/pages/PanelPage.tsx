@@ -88,7 +88,7 @@ export function PanelPage() {
 
   return (
     <main
-      className="shell stack"
+      className="shell stack screen"
       style={{
         paddingTop: mobile ? 20 : 40,
         paddingBottom: mobile ? 32 : 56,
@@ -211,6 +211,7 @@ export function PanelPage() {
       </div>
 
       <Plate
+        className="screen-grow"
         title="Links encurtados"
         cells={[`count ${formatNumber(total)}`, `Página ${page} de ${pages}`]}
         footer={
@@ -667,7 +668,13 @@ function EmptyState({
   return (
     <div
       className="stack"
-      style={{ padding: "56px 20px", gap: 12, alignItems: "center", textAlign: "center" }}
+      style={{
+        padding: "56px 20px",
+        gap: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+      }}
     >
       <h3 style={{ fontSize: 22 }}>{title}</h3>
       <p style={{ fontSize: 15, lineHeight: "24px", color: "var(--ink-small)", maxWidth: "48ch" }}>
@@ -680,7 +687,10 @@ function EmptyState({
 
 function ErrorState({ error, onRetry }: { error: ApiError; onRetry: () => void }) {
   return (
-    <div className="stack" style={{ padding: "56px 20px", gap: 12, alignItems: "center" }}>
+    <div
+      className="stack"
+      style={{ padding: "56px 20px", gap: 12, alignItems: "center", justifyContent: "center" }}
+    >
       <p className="kicker">{error.status ? `HTTP ${error.status}` : "Sem resposta"}</p>
       <h3 style={{ fontSize: 22 }}>Não foi possível carregar</h3>
       <div style={{ marginTop: 12 }}>

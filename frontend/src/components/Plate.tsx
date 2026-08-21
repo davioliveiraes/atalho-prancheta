@@ -11,6 +11,7 @@ export function Plate({
   children,
   footer,
   as: Tag = "section",
+  className,
   style,
 }: {
   title?: ReactNode;
@@ -18,10 +19,11 @@ export function Plate({
   children?: ReactNode;
   footer?: ReactNode;
   as?: "section" | "article" | "div";
+  className?: string;
   style?: React.CSSProperties;
 }) {
   return (
-    <Tag className="blueprint" style={style}>
+    <Tag className={className ? `blueprint ${className}` : "blueprint"} style={style}>
       <i className="corner tl" />
       <i className="corner tr" />
       <i className="corner bl" />

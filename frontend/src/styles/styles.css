@@ -298,6 +298,23 @@ img {
   .screen > .screen-spread > .screen-middle {
     margin-block: auto;
   }
+
+  /* Placa que ocupa a sobra vertical da tela em vez de parar onde o conteudo
+     acaba. O corpo estica junto — assim o rodape da placa (paginacao) encosta
+     no fim da tela mesmo com poucas linhas, e continua empurrando a pagina
+     normalmente quando as linhas passam da altura do viewport. */
+  .screen-grow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* As marcas de canto sao absolutas e ficam fora do fluxo; cabecalho e rodape
+     mantem a altura natural. Sobra o corpo, que e sempre um elemento so. */
+  .screen-grow > :not(.plate-head):not(.plate-foot):not(.corner) {
+    flex: 1;
+    min-height: 0;
+  }
 }
 
 /* Bloco emoldurado — desenho de linha, nunca preenchido */
