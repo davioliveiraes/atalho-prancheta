@@ -67,16 +67,18 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
         """
         try:
             return super().get_object()
-        except Http404:
-            raise NotFound("Nenhum link cadastrado com este código.")
+        except Http404 as error:
+            raise NotFound("Nenhum link cadastrado com este código.") from error
 
     def get_serializer_class(self):
         if self.action == "list":
             return ShortenedURLListSerializer
-        elif self.action in ["create"]:
+        if self.action in ["create"]:
             return ShortenedURLCreateSerializer
-        elif self.action in ["update", "partial_update"]:
-            return ShortenedURLDetailSerializer
+        if self.action in ["update", "partial_update"]:
+            # O de detalhe aceitaria short_code e os contadores de clique: ele
+            # existe para ler, e os campos de leitura sao os que ele expoe.
+            return ShortenedURLUpdateSerializer
         return ShortenedURLDetailSerializer
 
     def get_queryset(self):

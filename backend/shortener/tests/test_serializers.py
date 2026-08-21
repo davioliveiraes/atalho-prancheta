@@ -85,6 +85,49 @@ class ShortenedURLCreateSerializerTest(TestCase):
         self.assertIn("max_clicks", serializer.errors)
 
 
+class ShortenedURLUpdateSerializerTest(TestCase):
+    """O serializador que a view usa no PATCH — quatro campos, e so."""
+
+    def setUp(self):
+        self.url = ShortenedURL.objects.create(
+            original_url="https://example.com",
+            short_code="upd123",
+            total_clicks=4,
+            unique_clicks=3,
+        )
+
+    def test_short_code_and_counters_are_not_fields(self):
+        fields = set(ShortenedURLUpdateSerializer().fields)
+        self.assertEqual(fields, {"original_url", "is_active", "expires_at", "max_clicks"})
+
+    def test_rejects_a_new_expiration_in_the_past(self):
+        serializer = ShortenedURLUpdateSerializer(
+            self.url, data={"expires_at": timezone.now() - timedelta(days=1)}, partial=True
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("expires_at", serializer.errors)
+
+    def test_accepts_the_expiration_the_link_already_had(self):
+        past = timezone.now() - timedelta(days=1)
+        self.url.expires_at = past
+        self.url.save()
+
+        serializer = ShortenedURLUpdateSerializer(
+            self.url,
+            data={"original_url": "https://example.com/novo", "expires_at": past},
+            partial=True,
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_accepts_zero_as_unlimited(self):
+        """Na criacao 0 e recusado; na edicao e o caminho de volta ao ilimitado."""
+        serializer = ShortenedURLUpdateSerializer(self.url, data={"max_clicks": 0}, partial=True)
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+
 class ShortenedURLListSerializerTest(TestCase):
     def test_serializer_url(self):
         url = ShortenedURL.objects.create(

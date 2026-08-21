@@ -115,7 +115,7 @@ class ShortenedURLDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-        read_only_fieds = [
+        read_only_fields = [
             "short_code",
             "total_clicks",
             "unique_clicks",
@@ -221,6 +221,12 @@ class ShortenedURLUpdateSerializer(serializers.ModelSerializer):
         is_active: Status ativo/inativo
         expires_at: Data/hora de expiração
         max_clicks: Limite máximo de cliques
+
+    Sem validação de `max_clicks` mínimo, ao contrário da criação: 0 é o valor
+    de "sem limite" no modelo e é assim que a tela devolve um link ao estado
+    ilimitado. Na criação o campo simplesmente não é enviado quando não há
+    limite, então lá um 0 explícito continua sendo entrada suspeita. Negativo
+    não passa nos dois casos — o campo do modelo é PositiveIntegerField.
     """
 
     class Meta:
@@ -228,11 +234,16 @@ class ShortenedURLUpdateSerializer(serializers.ModelSerializer):
         fields = ["original_url", "is_active", "expires_at", "max_clicks"]
 
     def validate_expires_at(self, value):
-        if value and value <= timezone.now():
-            raise serializers.ValidationError("Data de expiracao deve ser no futuro.")
-        return value
+        """
+        Data nova precisa ser no futuro; a que já estava lá, não.
 
-    def validate_max_clicks(self, value):
-        if value is not None and value < 1:
-            raise serializers.ValidationError("Numero maximo de cliques deve ser maior que zero.")
+        Sem a segunda metade, um link já expirado ficaria impossível de editar:
+        a tela de edição repõe a data atual do link ao salvar qualquer outro
+        campo, e ela seria recusada por ser passado.
+        """
+        if not value or value == getattr(self.instance, "expires_at", None):
+            return value
+
+        if value <= timezone.now():
+            raise serializers.ValidationError("Data de expiracao deve ser no futuro.")
         return value

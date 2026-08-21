@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-133%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
+[![Tests](https://img.shields.io/badge/Tests-145%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
 
 ---
 
@@ -42,7 +42,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 
 ### Destaques
 
-- ✅ **133 testes automatizados** com 100% de sucesso
+- ✅ **145 testes automatizados** com 100% de sucesso
 - ✅ **Cobertura completa** de models, serializers e views
 - ✅ **Código limpo** seguindo PEP 8 e boas práticas
 - ✅ **Dockerizado** para fácil deployment
@@ -320,11 +320,11 @@ docker compose run --rm backend python manage.py test
 
 **Resultado:**
 ```
-Found 133 test(s).
+Found 145 test(s).
 System check identified no issues (0 silenced).
-.....................................................................................................................................
+.................................................................................................................................................
 ----------------------------------------------------------------------
-Ran 133 tests in 23.849s
+Ran 145 tests in 23.466s
 
 OK
 ```
@@ -332,11 +332,11 @@ OK
 ### Categorias de Testes
 
 - ✅ **Models** (17 testes) - Lógica de negócio
-- ✅ **Serializers** (12 testes) - Validações
-- ✅ **Views** (28 testes) - Endpoints CRUD, ações e redirect
+- ✅ **Serializers** (16 testes) - Validações de criação e de edição
+- ✅ **Views** (36 testes) - Endpoints CRUD, ações, redirect e o que o PATCH não muda
 - ✅ **Utils** (15 testes) - QR Code e IP do visitante
 - ✅ **Admin** (13 testes) - Colunas e painéis calculados
-- ✅ **Contas** (22 testes) - Cadastro, login, refresh, logout e `me`
+- ✅ **Contas** (23 testes) - Cadastro, login, refresh, logout e `me`
 - ✅ **Posse dos links** (18 testes) - Isolamento entre contas e link sem dono
 - ✅ **Comandos** (7 testes) - `adotar_links`
 

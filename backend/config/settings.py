@@ -194,7 +194,7 @@ STORAGES = {
 
 # Configurações adicionais do WhiteNoise
 WHITENOISE_USE_FINDERS = True
-WHITENOISE_AUTOREFRESH = True if DEBUG else False
+WHITENOISE_AUTOREFRESH = DEBUG
 WHITENOISE_ROOT = BASE_DIR / "staticfiles"
 
 # Media files
@@ -208,8 +208,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cors Settings
 
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
+# Lista explicita de quem pode chamar a API de outra origem. O valor vinha do
+# .env desde sempre e era ignorado aqui — o allow-all antigo respondia a
+# qualquer site.
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS",
+    default="http://localhost:5173,http://127.0.0.1:5173",
+    cast=Csv(),
+)
+
+# Escotilha para desenvolvimento com outra porta ou tunel. Fora disso, a lista
+# acima e que vale.
+CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bool)
+
+# A sessao e um JWT no cabecalho Authorization, que nao e "credencial" para o
+# navegador — cookie nenhum precisa atravessar origem. Manter isto ligado junto
+# do allow-all, como estava, e uma combinacao que o proprio padrao CORS proibe.
+CORS_ALLOW_CREDENTIALS = False
 
 # Rest Framework Settings
 

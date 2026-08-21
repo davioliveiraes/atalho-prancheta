@@ -241,3 +241,120 @@ class RedirectViewTest(TestCase):
         self.client.get(f"/api/r/{self.url.short_code}/", HTTP_REFERER="https://google.com")
         click = Click.objects.latest("clicked_at")
         self.assertEqual(click.referer, "https://google.com")
+
+
+class UpdateProtectionTest(APITestCase):
+    """
+    O que um PATCH pode e nao pode mudar.
+
+    A view atualiza pelo ShortenedURLUpdateSerializer, que expoe quatro campos.
+    Codigo curto e contadores de clique nao estao entre eles: o codigo e o que
+    foi divulgado e os contadores sao do redirect, nao de quem edita.
+    """
+
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="dono@exemplo.com", email="dono@exemplo.com", password="prancheta-2026-forte"
+        )
+        self.client.force_authenticate(self.owner)
+
+        self.link = ShortenedURL.objects.create(
+            original_url="https://exemplo.com",
+            short_code="fixo12",
+            total_clicks=7,
+            unique_clicks=5,
+            owner=self.owner,
+        )
+        self.url = reverse("shortened-url-detail", kwargs={"short_code": "fixo12"})
+
+    def test_patch_does_not_change_the_short_code(self):
+        response = self.client.patch(self.url, {"short_code": "outro9"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.short_code, "fixo12")
+        self.assertFalse(ShortenedURL.objects.filter(short_code="outro9").exists())
+
+    def test_patch_does_not_change_the_click_counters(self):
+        response = self.client.patch(
+            self.url, {"total_clicks": 9999, "unique_clicks": 9999}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.total_clicks, 7)
+        self.assertEqual(self.link.unique_clicks, 5)
+
+    def test_patch_changes_what_it_should(self):
+        expires_at = timezone.now() + timedelta(days=3)
+        response = self.client.patch(
+            self.url,
+            {
+                "original_url": "https://exemplo.com/novo",
+                "is_active": False,
+                "expires_at": expires_at.isoformat(),
+                "max_clicks": 25,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.original_url, "https://exemplo.com/novo")
+        self.assertFalse(self.link.is_active)
+        self.assertEqual(self.link.max_clicks, 25)
+        self.assertIsNotNone(self.link.expires_at)
+
+    def test_patch_rejects_an_expiration_in_the_past(self):
+        past = timezone.now() - timedelta(days=1)
+        response = self.client.patch(self.url, {"expires_at": past.isoformat()}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("expires_at", response.data)  # type: ignore
+
+    def test_an_expired_link_is_still_editable(self):
+        """A tela repoe a data atual do link ao salvar; ela nao pode ser recusada."""
+        past = timezone.now() - timedelta(days=1)
+        self.link.expires_at = past
+        self.link.save()
+
+        response = self.client.patch(
+            self.url,
+            {"original_url": "https://exemplo.com/corrigido", "expires_at": past.isoformat()},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.original_url, "https://exemplo.com/corrigido")
+
+    def test_max_clicks_zero_returns_the_link_to_unlimited(self):
+        self.link.max_clicks = 10
+        self.link.save()
+
+        response = self.client.patch(self.url, {"max_clicks": 0}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.max_clicks, 0)
+        self.assertFalse(self.link.has_reached_max_clicks())
+
+    def test_expiration_can_be_cleared(self):
+        self.link.expires_at = timezone.now() + timedelta(days=1)
+        self.link.save()
+
+        response = self.client.patch(self.url, {"expires_at": None}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.link.refresh_from_db()
+        self.assertIsNone(self.link.expires_at)
+
+    def test_response_is_still_the_full_detail(self):
+        """A tela de detalhe redesenha com o corpo da resposta do PATCH."""
+        response = self.client.patch(
+            self.url, {"original_url": "https://exemplo.com/outro"}, format="json"
+        )
+
+        for field in ["short_url", "statistics", "status", "recent_clicks", "qr_code"]:
+            with self.subTest(campo=field):
+                self.assertIn(field, response.data)  # type: ignore
