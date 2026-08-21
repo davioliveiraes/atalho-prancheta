@@ -11,6 +11,9 @@ django-cors-headers==4.9.0
 psycopg[binary]==3.3.4
 dj-database-url==3.1.2
 
+# Cache — backend nativo do Django (django.core.cache.backends.redis)
+redis==8.1.0
+
 # Environment
 python-dotenv==1.2.3
 python-decouple==3.8

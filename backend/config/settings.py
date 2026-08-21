@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -205,6 +206,36 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Cache
+
+# `manage.py test` roda com o cache em memoria mesmo havendo Redis: teste que
+# chama cache.clear() apagaria as contagens do ambiente inteiro, e a suite
+# passa a exigir um servico no ar para rodar.
+RUNNING_TESTS = sys.argv[1:2] == ["test"]
+
+# O teto de criacao de link mora no cache. Com mais de um worker de gunicorn, um
+# cache por processo daria a cada worker a sua propria contagem, e o limite
+# efetivo seria o configurado vezes o numero de workers; reiniciar tambem zeraria
+# tudo. O Redis mantem a conta num lugar so.
+#
+# Sem REDIS_URL a aplicacao continua de pe com o cache do processo — e o caso da
+# venv local, que nao sobe o Compose.
+REDIS_URL = config("REDIS_URL", default="")
+
+if REDIS_URL and not RUNNING_TESTS:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
 
 # Cors Settings
 

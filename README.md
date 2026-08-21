@@ -85,6 +85,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 - **Django REST Framework 3.14.0** - API REST
 - **PostgreSQL 15** - Banco de dados
 - **psycopg3** - Driver PostgreSQL
+- **Redis 8** - Cache do teto de criação, compartilhado entre os workers
 
 ### Frontend
 - **React 19** - Interface declarativa
@@ -116,10 +117,10 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 └────────┬────────┘
          │ /api
          ▼
-┌─────────────────┐
-│ Django REST API │
-│ ViewSets        │
-│ Serializers     │
+┌─────────────────┐        ┌──────────────────┐
+│ Django REST API │───────▶│ Redis            │
+│ ViewSets        │        │ teto de criação  │
+│ Serializers     │        └──────────────────┘
 │ Models          │
 └────────┬────────┘
          │
@@ -159,7 +160,7 @@ cp .env.example .env
 # Edite o .env com suas configurações
 ```
 
-3. **Suba backend, frontend e banco de dados**
+3. **Suba backend, frontend, banco de dados e cache**
 ```bash
 docker compose up -d
 ```
@@ -288,6 +289,11 @@ curl -X POST http://localhost:8000/api/auth/register/ \
 > Criar link tem teto: por IP para quem não tem conta e por conta para quem tem
 > (`THROTTLE_LINK_ANON` e `THROTTLE_LINK_USER` no `.env`). Passou do teto, a API
 > responde 429. Ler, editar e redirecionar não têm limite.
+>
+> A contagem fica no Redis, então vale para a aplicação inteira e não por
+> processo — com vários workers de gunicorn, um cache em memória daria a cada um
+> a sua própria conta. Sem `REDIS_URL` a aplicação sobe do mesmo jeito, com o
+> cache do processo.
 
 ### Actions
 

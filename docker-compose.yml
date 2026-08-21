@@ -24,6 +24,26 @@ services:
     networks:
       - prancheta_network
 
+  redis:
+    image: redis:8-alpine
+    container_name: atalho_prancheta_redis
+    restart: unless-stopped
+    # Sem persistencia: o que mora aqui e contagem de teto de criacao, que pode
+    # ser perdida num reinicio sem prejuizo nenhum. O limite de memoria com
+    # descarte por LRU impede que uma enxurrada de chaves derrube o servico.
+    command: >
+      redis-server --save "" --appendonly no
+      --maxmemory 128mb --maxmemory-policy allkeys-lru
+    # Sem porta publicada: quem fala com ele e o backend, pela rede interna.
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - prancheta_network
+
   backend:
     build:
       context: .
@@ -46,6 +66,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       INTERNAL_ALLOWED_HOSTS: backend
+      REDIS_URL: redis://redis:6379/0
     healthcheck:
       test:
         [
@@ -58,6 +79,8 @@ services:
       start_period: 30s
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - prancheta_network
