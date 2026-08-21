@@ -46,6 +46,22 @@ RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)  # type: ignore
 
+# Quantos proxies reversos confiaveis existem na frente da aplicacao.
+#
+# X-Forwarded-For e escrito pelo cliente e so vira confiavel depois que um proxy
+# nosso o reescreve. Com N proxies confiaveis, o IP real do visitante e a N-esima
+# entrada contando da direita para a esquerda; tudo a esquerda disso e texto que o
+# proprio cliente enviou e pode ser forjado.
+#
+# 0 (padrao) = acesso direto, ignora o cabecalho e usa REMOTE_ADDR.
+# 1 = um proxy (nginx do compose, Render, Cloudflare).
+# Aumente apenas se houver proxies confiaveis encadeados.
+TRUSTED_PROXY_COUNT = config(
+    "TRUSTED_PROXY_COUNT",
+    default=1 if RENDER_EXTERNAL_HOSTNAME else 0,
+    cast=int,
+)
+
 # Application definition
 
 INSTALLED_APPS = [
