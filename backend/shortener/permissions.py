@@ -7,8 +7,8 @@ Três situações, e só três:
     - Link sem dono  - criado na home por quem não tem conta. Qualquer um lê
       (o criador precisa disso para ver o QR Code logo depois de encurtar),
       mas ninguém altera: sem dono não há quem autorize a mudança.
-    - Listagem        - é o painel de uma conta, então exige estar autenticado.
-      O filtro por dono fica no `get_queryset` da view.
+    - Listagem e resumo - são o painel de uma conta, então exigem estar
+      autenticado. O filtro por dono fica no `get_queryset` da view.
 """
 
 from rest_framework.permissions import SAFE_METHODS, BasePermission
@@ -20,7 +20,7 @@ class IsOwnerOrReadOnlyWhenOrphan(BasePermission):
     message = "Este link pertence a outra conta."
 
     def has_permission(self, request, view):
-        if view.action == "list":
+        if view.action in view.ACCOUNT_ACTIONS:
             return bool(request.user and request.user.is_authenticated)
 
         # Criar segue aberto. As rotas de detalhe passam batido aqui de

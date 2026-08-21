@@ -607,6 +607,32 @@ GET {{api_url}}/urls/linkedin/statistics/
 
 ---
 
+### Resumo da Conta
+
+**Request:**
+```http
+GET {{api_url}}/urls/summary/
+Authorization: Bearer {{access_token}}
+```
+
+Aceita os mesmos filtros da lista (`?search=`, `?is_active=`) e responde sobre
+o conjunto todo, não sobre uma página.
+
+**Response (200 OK):**
+```json
+{
+    "links": 12,
+    "clicks": 340,
+    "unique": 208,
+    "down": 3
+}
+```
+
+`down` conta os links fora do ar por qualquer um dos três motivos: inativo,
+expirado ou com o teto de cliques únicos alcançado.
+
+---
+
 ## 🔄 Redirecionamento
 
 ### 1. Redirecionar URL Ativa
@@ -836,6 +862,27 @@ Response:
     ]
 }
 ```
+
+> Isso vale na **criação**, onde não enviar o campo já significa ilimitado. No
+> `PATCH`, `0` é aceito: é o caminho de volta ao ilimitado para um link que
+> tinha teto.
+
+---
+
+### 7. Teto de Criação Alcançado (429)
+```json
+POST {{api_url}}/urls/
+
+Response:
+{
+    "detail": "Request was throttled. Expected available in 3542 seconds."
+}
+```
+
+O limite é por IP para quem não está autenticado e por conta para quem está,
+com folga bem maior no segundo caso. Os dois valores vêm do `.env`
+(`THROTTLE_LINK_ANON` e `THROTTLE_LINK_USER`). Só a criação é limitada — ler,
+editar e redirecionar não passam por teto.
 
 ---
 

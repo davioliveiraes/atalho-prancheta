@@ -239,6 +239,9 @@ REST_FRAMEWORK = {
         "auth-register": config("THROTTLE_REGISTER", default="20/hour"),
         "auth-login": config("THROTTLE_LOGIN", default="30/min"),
         "auth-refresh": config("THROTTLE_REFRESH", default="60/min"),
+        # Criar link e a unica escrita aberta a quem nao tem conta.
+        "link-create-anon": config("THROTTLE_LINK_ANON", default="20/hour"),
+        "link-create-user": config("THROTTLE_LINK_USER", default="120/hour"),
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,

@@ -358,3 +358,97 @@ class UpdateProtectionTest(APITestCase):
         for field in ["short_url", "statistics", "status", "recent_clicks", "qr_code"]:
             with self.subTest(campo=field):
                 self.assertIn(field, response.data)  # type: ignore
+
+
+class SummaryEndpointTest(APITestCase):
+    """
+    As somas do cabecalho do painel.
+
+    Antes a interface chegava nelas percorrendo a lista pagina por pagina; o
+    endpoint responde o mesmo conjunto de numeros sobre o mesmo recorte.
+    """
+
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="dono@exemplo.com", email="dono@exemplo.com", password="prancheta-2026-forte"
+        )
+        self.other = User.objects.create_user(
+            username="outra@exemplo.com", email="outra@exemplo.com"
+        )
+        self.url = "/api/urls/summary/"
+
+    def link(self, code, **fields):
+        fields.setdefault("owner", self.owner)
+        fields.setdefault("original_url", f"https://exemplo.com/{code}")
+        return ShortenedURL.objects.create(short_code=code, **fields)
+
+    def summary(self, **params):
+        self.client.force_authenticate(self.owner)
+        response = self.client.get(self.url, params)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.data  # type: ignore
+
+    def test_summary_requires_an_account(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_empty_account_gets_zeros(self):
+        self.assertEqual(dict(self.summary()), {"links": 0, "clicks": 0, "unique": 0, "down": 0})
+
+    def test_sums_only_the_links_of_the_account(self):
+        self.link("meu111", total_clicks=10, unique_clicks=6)
+        self.link("meu222", total_clicks=5, unique_clicks=4)
+        self.link("dela11", owner=self.other, total_clicks=100, unique_clicks=90)
+        self.link("orfao1", owner=None, total_clicks=50, unique_clicks=40)
+
+        data = self.summary()
+
+        self.assertEqual(data["links"], 2)
+        self.assertEqual(data["clicks"], 15)
+        self.assertEqual(data["unique"], 10)
+
+    def test_counts_every_reason_a_link_is_out_of_service(self):
+        self.link("ativo1")
+        self.link("inativ", is_active=False)
+        self.link("expira", expires_at=timezone.now() - timedelta(days=1))
+        self.link("teto11", max_clicks=3, unique_clicks=3)
+
+        data = self.summary()
+
+        self.assertEqual(data["links"], 4)
+        self.assertEqual(data["down"], 3)
+
+    def test_a_link_without_a_ceiling_is_never_out_of_service(self):
+        """max_clicks = 0 e ilimitado; comparar com os unicos daria falso positivo."""
+        self.link("livre1", max_clicks=0, unique_clicks=40)
+
+        self.assertEqual(self.summary()["down"], 0)
+
+    def test_a_link_below_its_ceiling_is_not_out_of_service(self):
+        self.link("quase1", max_clicks=10, unique_clicks=9)
+
+        self.assertEqual(self.summary()["down"], 0)
+
+    def test_a_future_expiration_is_not_out_of_service(self):
+        self.link("futuro", expires_at=timezone.now() + timedelta(days=2))
+
+        self.assertEqual(self.summary()["down"], 0)
+
+    def test_summary_follows_the_search_filter(self):
+        self.link("busca1", original_url="https://github.com/davi", total_clicks=7)
+        self.link("outro1", original_url="https://exemplo.com/nada", total_clicks=3)
+
+        data = self.summary(search="github")
+
+        self.assertEqual(data["links"], 1)
+        self.assertEqual(data["clicks"], 7)
+
+    def test_summary_follows_the_status_filter(self):
+        self.link("ativo1", total_clicks=4)
+        self.link("inativ", is_active=False, total_clicks=9)
+
+        data = self.summary(is_active="true")
+
+        self.assertEqual(data["links"], 1)
+        self.assertEqual(data["clicks"], 4)
+        self.assertEqual(data["down"], 0)

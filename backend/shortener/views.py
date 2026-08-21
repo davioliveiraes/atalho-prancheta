@@ -5,9 +5,10 @@ Este módulo contém ViewSets e visualizações para gerenciar URLs encurtadas, 
 """
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import F, Q
+from django.db.models import Count, F, Q, Sum
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
@@ -25,6 +26,7 @@ from .serializers import (
     ShortenedURLListSerializer,
     ShortenedURLUpdateSerializer,
 )
+from .throttling import AnonLinkCreateThrottle, UserLinkCreateThrottle
 from .utils import generate_qr_code, get_client_ip
 
 
@@ -42,6 +44,7 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
 
     Endpoints:
         - GET /api/urls/ - Listar os links da conta (com paginação, pesquisa e filtros)
+        - GET /api/urls/summary/ - Somas da conta para o cabeçalho do painel
         - POST /api/urls/ - Criar um novo URL encurtado
         - GET /api/urls/{short_code}/ - Recuperar detalhes do URL
         - PATCH /api/urls/{short_code}/ - Atualizar URL
@@ -55,6 +58,14 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
     queryset = ShortenedURL.objects.all()
     lookup_field = "short_code"
     permission_classes = [IsOwnerOrReadOnlyWhenOrphan]
+
+    # Rotas que trabalham sobre o conjunto da conta, e nao sobre um link.
+    ACCOUNT_ACTIONS = ("list", "summary")
+
+    def get_throttles(self):
+        if self.action == "create":
+            return [AnonLinkCreateThrottle(), UserLinkCreateThrottle()]
+        return super().get_throttles()
 
     def get_object(self):
         """
@@ -84,9 +95,9 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = ShortenedURL.objects.all()
 
-        if self.action == "list":
-            # A lista e o painel da conta: nada de link de terceiro nem dos
-            # anonimos, que nao pertencem a ninguem. As rotas de detalhe
+        if self.action in self.ACCOUNT_ACTIONS:
+            # A lista e o resumo sao o painel da conta: nada de link de terceiro
+            # nem dos anonimos, que nao pertencem a ninguem. As rotas de detalhe
             # continuam vendo tudo, porque quem filtra la e a permissao.
             queryset = queryset.filter(owner=self.request.user)
 
@@ -126,6 +137,34 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
 
         detail_serializer = ShortenedURLDetailSerializer(instance, context={"request": request})
         return Response(detail_serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        """
+        As somas do cabeçalho do painel, em uma consulta.
+
+        A interface chegava a esses quatro números percorrendo a lista de dez em
+        dez e somando no navegador — uma requisição por página, a cada carga do
+        painel. Aqui quem soma é o banco, sobre o mesmo recorte da lista: os
+        filtros de busca e de status valem igual.
+        """
+        # Mesma precedência de can_be_accessed(), escrita em SQL: inativo,
+        # expirado, ou com o teto de cliques únicos alcançado.
+        out_of_service = (
+            Q(is_active=False)
+            | Q(expires_at__lt=timezone.now())
+            | (Q(max_clicks__gt=0) & Q(unique_clicks__gte=F("max_clicks")))
+        )
+
+        totals = self.get_queryset().aggregate(
+            links=Count("id"),
+            clicks=Sum("total_clicks"),
+            unique=Sum("unique_clicks"),
+            down=Count("id", filter=out_of_service),
+        )
+
+        # Sum devolve None quando a conta ainda não tem link nenhum.
+        return Response({key: value or 0 for key, value in totals.items()})
 
     @action(detail=True, methods=["post"])
     def activate(self, request, short_code=None):

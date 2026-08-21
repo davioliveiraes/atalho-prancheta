@@ -2,6 +2,7 @@ import { Nav } from "./components/Nav";
 import { Guarded, GuestOnly, useSessionCheck } from "./lib/auth";
 import { MobileBarProvider } from "./lib/mobileBar";
 import { Link, usePathname } from "./lib/router";
+import { ApiPage } from "./pages/ApiPage";
 import { CardsPanelPage } from "./pages/CardsPanelPage";
 import { CriarContaPage } from "./pages/CriarContaPage";
 import { DetailPage } from "./pages/DetailPage";
@@ -15,6 +16,9 @@ function resolve(pathname: string) {
   if (segments.length === 0) return <LandingPage />;
 
   if (segments.length === 1) {
+    // Referência da API: aberta, como a própria API para quem só quer encurtar.
+    if (segments[0] === "api") return <ApiPage />;
+
     // O painel lista por dono: sem sessão não há o que listar.
     if (segments[0] === "painel") {
       return (

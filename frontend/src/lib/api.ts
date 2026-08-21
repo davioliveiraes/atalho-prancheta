@@ -164,7 +164,16 @@ export interface ListParams {
   page?: number;
 }
 
-/** Somas do que a API devolve — nenhuma média, projeção ou comparação. */
+/** Filtros da lista em querystring — a lista e o resumo leem os mesmos. */
+function listQuery({ search, isActive, page }: ListParams = {}) {
+  const query = new URLSearchParams();
+  if (search) query.set("search", search);
+  if (isActive != null) query.set("is_active", String(isActive));
+  if (page && page > 1) query.set("page", String(page));
+  return query.toString() ? `?${query}` : "";
+}
+
+/** Corpo de /urls/summary/ — somas, nenhuma média, projeção ou comparação. */
 export interface LinkSummary {
   links: number;
   clicks: number;
@@ -207,42 +216,17 @@ export const authApi = {
 
 export const linkApi = {
   /** GET /api/urls/?search=&is_active=&page= */
-  list({ search, isActive, page }: ListParams = {}): Promise<Paginated<LinkListItem>> {
-    const query = new URLSearchParams();
-    if (search) query.set("search", search);
-    if (isActive != null) query.set("is_active", String(isActive));
-    if (page && page > 1) query.set("page", String(page));
-    const suffix = query.toString() ? `?${query}` : "";
-    return request<Paginated<LinkListItem>>(`/urls/${suffix}`);
+  list(params: ListParams = {}): Promise<Paginated<LinkListItem>> {
+    return request<Paginated<LinkListItem>>(`/urls/${listQuery(params)}`);
   },
 
   /**
-   * Resumo do cabeçalho do painel: total de links e soma de cliques.
-   * A API pagina de 10 em 10 e não expõe agregado, então percorremos as
-   * páginas do filtro atual. O teto evita varredura sem fim se a lista crescer.
+   * GET /api/urls/summary/ — as somas do cabeçalho do painel.
+   * Mesmo recorte da lista: busca e status valem igual, e a paginação não
+   * entra porque o resumo é sobre o conjunto todo, não sobre a página.
    */
-  async summary(params: ListParams = {}): Promise<LinkSummary> {
-    const MAX_PAGES = 50;
-    let page = 1;
-    let links = 0;
-    let clicks = 0;
-    let unique = 0;
-    let down = 0;
-
-    for (;;) {
-      const data = await linkApi.list({ ...params, page });
-      links = data.count;
-      for (const item of data.results) {
-        clicks += item.total_clicks;
-        unique += item.unique_clicks;
-        // Fora do ar cobre inativo, expirado e limite atingido de uma vez.
-        if (!item.status.can_access) down += 1;
-      }
-      if (!data.next || page >= MAX_PAGES) break;
-      page += 1;
-    }
-
-    return { links, clicks, unique, down };
+  summary(params: ListParams = {}): Promise<LinkSummary> {
+    return request<LinkSummary>(`/urls/summary/${listQuery({ ...params, page: undefined })}`);
   },
 
   /** GET /api/urls/{code}/ */

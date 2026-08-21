@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-145%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
+[![Tests](https://img.shields.io/badge/Tests-159%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
 
 ---
 
@@ -42,7 +42,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 
 ### Destaques
 
-- ✅ **145 testes automatizados** com 100% de sucesso
+- ✅ **159 testes automatizados** com 100% de sucesso
 - ✅ **Cobertura completa** de models, serializers e views
 - ✅ **Código limpo** seguindo PEP 8 e boas práticas
 - ✅ **Dockerizado** para fácil deployment
@@ -186,11 +186,13 @@ docker compose exec backend python manage.py adotar_links voce@exemplo.com
 - Frontend: http://localhost:5173/
 - Criar conta: http://localhost:5173/criar-conta — o painel (`/painel`) exige conta;
   encurtar na home continua aberto
+- Referência da API: http://localhost:5173/api
 - API: http://localhost:8000/api/urls/
 - Admin: http://localhost:8000/admin/
 
-> A documentação da API não é servida pelo frontend. Veja [`docs/EXAMPLES.md`](docs/EXAMPLES.md)
-> e a coleção Postman em [`docs/`](docs/).
+> A referência em `/api` lista as rotas e o acesso que cada uma exige. Os exemplos
+> de corpo completo estão em [`docs/EXAMPLES.md`](docs/EXAMPLES.md), com a coleção
+> Postman em [`docs/`](docs/).
 
 ---
 
@@ -277,10 +279,15 @@ curl -X POST http://localhost:8000/api/auth/register/ \
 | Método | Endpoint | Descrição | Acesso |
 |--------|----------|-----------|--------|
 | GET | `/api/urls/` | Lista os links da conta | Exige token |
+| GET | `/api/urls/summary/` | Somas da conta: links, cliques, únicos e fora do ar | Exige token |
 | POST | `/api/urls/` | Cria nova URL | Aberto (com token, o link nasce com dono) |
 | GET | `/api/urls/{code}/` | Detalhes da URL | Dono, ou qualquer um se o link não tem dono |
 | PATCH | `/api/urls/{code}/` | Atualiza URL | Somente o dono |
 | DELETE | `/api/urls/{code}/` | Deleta URL | Somente o dono |
+
+> Criar link tem teto: por IP para quem não tem conta e por conta para quem tem
+> (`THROTTLE_LINK_ANON` e `THROTTLE_LINK_USER` no `.env`). Passou do teto, a API
+> responde 429. Ler, editar e redirecionar não têm limite.
 
 ### Actions
 
@@ -320,11 +327,11 @@ docker compose run --rm backend python manage.py test
 
 **Resultado:**
 ```
-Found 145 test(s).
+Found 159 test(s).
 System check identified no issues (0 silenced).
-.................................................................................................................................................
+...............................................................................................................................................................
 ----------------------------------------------------------------------
-Ran 145 tests in 23.466s
+Ran 159 tests in 25.632s
 
 OK
 ```
@@ -333,12 +340,13 @@ OK
 
 - ✅ **Models** (17 testes) - Lógica de negócio
 - ✅ **Serializers** (16 testes) - Validações de criação e de edição
-- ✅ **Views** (36 testes) - Endpoints CRUD, ações, redirect e o que o PATCH não muda
+- ✅ **Views** (45 testes) - Endpoints CRUD, ações, resumo, redirect e o que o PATCH não muda
 - ✅ **Utils** (15 testes) - QR Code e IP do visitante
 - ✅ **Admin** (13 testes) - Colunas e painéis calculados
 - ✅ **Contas** (23 testes) - Cadastro, login, refresh, logout e `me`
 - ✅ **Posse dos links** (18 testes) - Isolamento entre contas e link sem dono
 - ✅ **Comandos** (7 testes) - `adotar_links`
+- ✅ **Teto de criação** (5 testes) - Limite por IP e por conta
 
 ---
 

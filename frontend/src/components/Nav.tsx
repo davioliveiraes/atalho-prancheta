@@ -1,5 +1,5 @@
 import { Grid, Menu, Search, X } from "lucide-react";
-import { type MouseEvent, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../lib/auth";
 import { useMobileBar } from "../lib/mobileBar";
 import { Link, navigate, usePathname } from "../lib/router";
@@ -10,11 +10,6 @@ import { useIsMobile } from "../lib/useIsMobile";
  * direita — o `.nav` usa space-between, então nunca há item solto no meio.
  * O botão de menu só existe abaixo de 900px (regra da folha, não desta tela).
  */
-
-/** Itens de chrome que ainda não têm funcionalidade no backend. */
-function pending(event: MouseEvent<HTMLElement>) {
-  event.preventDefault();
-}
 
 /** Nome curto da conta: o primeiro nome, ou o e-mail antes do arroba. */
 function accountLabel(name: string, email: string) {
@@ -93,10 +88,14 @@ export function Nav() {
         >
           Painel
         </Link>
-        {/* Pendente: página de documentação da API. */}
-        <a className="nav-link" href="#" onClick={pending}>
+        <Link
+          className="nav-link"
+          to="/api"
+          aria-current={pathname === "/api" ? "page" : undefined}
+          onClick={() => setOpen(false)}
+        >
           API
-        </a>
+        </Link>
 
         {user ? (
           <>
