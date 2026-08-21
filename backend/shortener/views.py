@@ -17,6 +17,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from .models import Click, ShortenedURL
+from .permissions import IsOwnerOrReadOnlyWhenOrphan
 from .serializers import (
     ClickSerializer,
     ShortenedURLCreateSerializer,
@@ -33,8 +34,14 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
 
         Fornece operações CRUD e ações personalizadas para gerenciamento de URLs.
 
+    Acesso:
+        - Listar exige conta e devolve apenas os links dela.
+        - Criar continua aberto; com token, o link nasce com dono.
+        - Ler, alterar e apagar um link com dono é coisa do dono. Link sem dono
+          (criado na home sem conta) qualquer um lê, ninguém altera.
+
     Endpoints:
-        - GET /api/urls/ - Listar todos os URLs (com paginação, pesquisa e filtros)
+        - GET /api/urls/ - Listar os links da conta (com paginação, pesquisa e filtros)
         - POST /api/urls/ - Criar um novo URL encurtado
         - GET /api/urls/{short_code}/ - Recuperar detalhes do URL
         - PATCH /api/urls/{short_code}/ - Atualizar URL
@@ -47,6 +54,7 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
 
     queryset = ShortenedURL.objects.all()
     lookup_field = "short_code"
+    permission_classes = [IsOwnerOrReadOnlyWhenOrphan]
 
     def get_object(self):
         """
@@ -74,6 +82,12 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = ShortenedURL.objects.all()
 
+        if self.action == "list":
+            # A lista e o painel da conta: nada de link de terceiro nem dos
+            # anonimos, que nao pertencem a ninguem. As rotas de detalhe
+            # continuam vendo tudo, porque quem filtra la e a permissao.
+            queryset = queryset.filter(owner=self.request.user)
+
         is_active = self.request.query_params.get("is_active")  # type: ignore
         if is_active is not None:
             queryset = queryset.filter(is_active=is_active.lower() == "true")
@@ -89,7 +103,9 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
+        # Sem token o link nasce orfao — e o encurtador publico da home.
+        user = request.user if request.user.is_authenticated else None
+        instance = serializer.save(owner=user)
 
         short_url = request.build_absolute_uri(f"/api/r/{instance.short_code}")
         qr_code_file = generate_qr_code(short_url, instance.short_code)

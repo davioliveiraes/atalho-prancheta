@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-68%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
+[![Tests](https://img.shields.io/badge/Tests-133%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
 
 ---
 
@@ -42,7 +42,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 
 ### Destaques
 
-- ✅ **68 testes automatizados** com 100% de sucesso
+- ✅ **133 testes automatizados** com 100% de sucesso
 - ✅ **Cobertura completa** de models, serializers e views
 - ✅ **Código limpo** seguindo PEP 8 e boas práticas
 - ✅ **Dockerizado** para fácil deployment
@@ -65,6 +65,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 - 🔍 **Busca e Filtros** avançados
 - 📈 **Estatísticas Detalhadas** por URL
 - ✅ **Ativar/Desativar URLs** dinamicamente
+- 👤 **Contas com JWT** — cada painel lista apenas os links da própria conta
 
 ### Segurança e Validações
 
@@ -173,7 +174,15 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py createsuperuser
 ```
 
-6. **Acesse a aplicação**
+6. **Links criados antes das contas** (opcional)
+
+O painel lista por dono, então links antigos ficam sem aparecer. Para transferi-los:
+```bash
+docker compose exec backend python manage.py adotar_links voce@exemplo.com --simular
+docker compose exec backend python manage.py adotar_links voce@exemplo.com
+```
+
+7. **Acesse a aplicação**
 - Frontend: http://localhost:5173/
 - API: http://localhost:8000/api/urls/
 - Admin: http://localhost:8000/admin/
@@ -242,24 +251,43 @@ curl http://localhost:8000/api/urls/abc123/statistics/
 
 ## API Endpoints
 
-### URLs
+### Contas
+
+Autenticação por JWT (`Authorization: Bearer <access>`). O encurtador continua
+aberto: criar e consultar link não exige conta.
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/api/urls/` | Lista todas as URLs |
-| POST | `/api/urls/` | Cria nova URL |
-| GET | `/api/urls/{code}/` | Detalhes da URL |
-| PATCH | `/api/urls/{code}/` | Atualiza URL |
-| DELETE | `/api/urls/{code}/` | Deleta URL |
+| POST | `/api/auth/register/` | Cria conta e devolve o par de tokens |
+| POST | `/api/auth/login/` | Troca e-mail e senha pelo par de tokens |
+| POST | `/api/auth/refresh/` | Renova o access (o refresh também é rotacionado) |
+| POST | `/api/auth/logout/` | Invalida o refresh enviado |
+| GET | `/api/auth/me/` | Conta dona do token |
+
+```bash
+curl -X POST http://localhost:8000/api/auth/register/ \
+  -H "Content-Type: application/json" \
+  -d '{"email": "voce@exemplo.com", "password": "sua-senha-forte", "password_confirm": "sua-senha-forte"}'
+```
+
+### URLs
+
+| Método | Endpoint | Descrição | Acesso |
+|--------|----------|-----------|--------|
+| GET | `/api/urls/` | Lista os links da conta | Exige token |
+| POST | `/api/urls/` | Cria nova URL | Aberto (com token, o link nasce com dono) |
+| GET | `/api/urls/{code}/` | Detalhes da URL | Dono, ou qualquer um se o link não tem dono |
+| PATCH | `/api/urls/{code}/` | Atualiza URL | Somente o dono |
+| DELETE | `/api/urls/{code}/` | Deleta URL | Somente o dono |
 
 ### Actions
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| POST | `/api/urls/{code}/activate/` | Ativa URL |
-| POST | `/api/urls/{code}/deactivate/` | Desativa URL |
-| GET | `/api/urls/{code}/statistics/` | Estatísticas |
-| GET | `/api/urls/{code}/qrcode/` | QR Code |
+| Método | Endpoint | Descrição | Acesso |
+|--------|----------|-----------|--------|
+| POST | `/api/urls/{code}/activate/` | Ativa URL | Somente o dono |
+| POST | `/api/urls/{code}/deactivate/` | Desativa URL | Somente o dono |
+| GET | `/api/urls/{code}/statistics/` | Estatísticas | Dono, ou qualquer um se o link não tem dono |
+| GET | `/api/urls/{code}/qrcode/` | QR Code | Dono, ou qualquer um se o link não tem dono |
 
 ### Redirect
 
@@ -285,16 +313,16 @@ GET /api/urls/?page=2
 
 ### Executar Todos os Testes
 ```bash
-docker compose exec backend python manage.py test shortener.tests
+docker compose run --rm backend python manage.py test
 ```
 
 **Resultado:**
 ```
-Found 68 test(s).
+Found 133 test(s).
 System check identified no issues (0 silenced).
-....................................................................
+.....................................................................................................................................
 ----------------------------------------------------------------------
-Ran 68 tests in 0.648s
+Ran 133 tests in 23.849s
 
 OK
 ```
@@ -303,9 +331,12 @@ OK
 
 - ✅ **Models** (17 testes) - Lógica de negócio
 - ✅ **Serializers** (12 testes) - Validações
-- ✅ **Views** (15 testes) - Endpoints CRUD
-- ✅ **Redirects** (11 testes) - Tracking de cliques
+- ✅ **Views** (28 testes) - Endpoints CRUD, ações e redirect
+- ✅ **Utils** (15 testes) - QR Code e IP do visitante
 - ✅ **Admin** (13 testes) - Colunas e painéis calculados
+- ✅ **Contas** (22 testes) - Cadastro, login, refresh, logout e `me`
+- ✅ **Posse dos links** (18 testes) - Isolamento entre contas e link sem dono
+- ✅ **Comandos** (7 testes) - `adotar_links`
 
 ---
 

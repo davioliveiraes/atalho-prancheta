@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
@@ -72,7 +73,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    # Guarda os refresh tokens invalidados no logout e na rotacao.
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
+    "accounts.apps.AccountsConfig",
     "shortener.apps.ShortenerConfig",
 ]
 
@@ -210,6 +214,17 @@ CORS_ALLOW_CREDENTIALS = True
 # Rest Framework Settings
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        # Subclasse propria: mesma autenticacao, mensagens em portugues.
+        "accounts.authentication.JWTAuthentication",
+    ],
+    # Sem permissao padrao: cada view declara a sua. O encurtador continua
+    # aberto e as rotas de conta pedem autenticacao explicitamente.
+    "DEFAULT_THROTTLE_RATES": {
+        "auth-register": config("THROTTLE_REGISTER", default="20/hour"),
+        "auth-login": config("THROTTLE_LOGIN", default="30/min"),
+        "auth-refresh": config("THROTTLE_REFRESH", default="60/min"),
+    },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_RENDERER_CLASSES": [
@@ -221,6 +236,21 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
     ],
+}
+
+# JSON Web Tokens
+
+SIMPLE_JWT = {
+    # Access curto porque um token assinado nao pode ser revogado antes de
+    # expirar; o refresh e que carrega a sessao longa e esse da para invalidar.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_MINUTES", default=30, cast=int)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=config("JWT_REFRESH_DAYS", default=7, cast=int)),
+    # Cada refresh devolve um par novo e manda o anterior para a blacklist.
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "SIGNING_KEY": SECRET_KEY,
 }
 
 if not DEBUG:

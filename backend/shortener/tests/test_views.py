@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -9,17 +10,28 @@ from rest_framework.test import APITestCase
 
 from shortener.models import Click, ShortenedURL
 
+User = get_user_model()
+
 
 class ShortenedURLViewSetTest(APITestCase):
     def setUp(self):
+        # O painel e as rotas de alteracao pertencem a uma conta; os links do
+        # cenario sao dela.
+        self.owner = User.objects.create_user(
+            username="dono@exemplo.com", email="dono@exemplo.com", password="prancheta-2026-forte"
+        )
+        self.client.force_authenticate(self.owner)
+
         self.url1 = ShortenedURL.objects.create(
             original_url="https://example.com",
             short_code="test1",
+            owner=self.owner,
         )
         self.url2 = ShortenedURL.objects.create(
             original_url="https://google.com",
             short_code="test2",
             is_active=False,
+            owner=self.owner,
         )
         self.list_url = reverse("shortened-url-list")
 

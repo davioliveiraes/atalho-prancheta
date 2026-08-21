@@ -4,6 +4,7 @@ Modelos para aplicação de encurtamento de URLs
 Este módulo define os modelos de banco de dados para URLs encurtadas e rastreamento de cliques.
 """
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -15,6 +16,7 @@ class ShortenedURL(models.Model):
     Atributos:
         original_url(str): A URL longa original a ser encurtada.
         short_code (str): O código curto exclusivo da URL.
+        owner (User): Conta dona do link; vazio quando criado sem conta.
         is_active (bool): Indica se a URL encurtada está ativa.
         expires_at (datetime): Data/hora de expiração opcional para a URL.
         max_clicks (int): Número máximo de cliques únicos permitidos (0 = ilimitado).
@@ -37,6 +39,19 @@ class ShortenedURL(models.Model):
         unique=True,
         db_index=True,
         help_text="Codigo unico para a URL encurtada",
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="links",
+        verbose_name="Dono",
+        # Nulo e um estado legitimo: o encurtador da home aceita quem nao tem
+        # conta, e esses links continuam funcionando sem aparecer em painel
+        # nenhum. Apagar a conta leva junto os links dela.
+        help_text="Conta que criou o link. Vazio para link criado sem conta",
     )
 
     is_active = models.BooleanField(
@@ -92,6 +107,8 @@ class ShortenedURL(models.Model):
             models.Index(fields=["short_code"]),
             models.Index(fields=["created_at"]),
             models.Index(fields=["is_active"]),
+            # O painel lista sempre por dono e em ordem de criacao.
+            models.Index(fields=["owner", "-created_at"]),
         ]
 
     def __str__(self):

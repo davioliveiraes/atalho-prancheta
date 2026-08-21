@@ -6,10 +6,124 @@
 
 ## 📋 Índice
 
+- [Contas e Autenticação](#contas-e-autenticação)
 - [Criar URLs](#criar-urls)
 - [Gerenciar URLs](#gerenciar-urls)
 - [Estatísticas](#estatísticas)
 - [Redirecionamento](#redirecionamento)
+
+---
+
+## 🔐 Contas e Autenticação
+
+A API usa JWT. O token de acesso vai no cabeçalho `Authorization: Bearer <access>`.
+
+Sem token ainda dá para **encurtar** e **consultar** um link (é o encurtador da
+home). O que exige conta é a **lista** do painel, e alterar ou apagar um link só
+o dono faz. Link criado sem conta não tem dono: qualquer um lê, ninguém altera.
+
+### 1. Criar conta
+
+**Request:**
+```http
+POST {{api_url}}/auth/register/
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+    "name": "Davi",
+    "email": "voce@exemplo.com",
+    "password": "sua-senha-forte",
+    "password_confirm": "sua-senha-forte"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6...",
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6...",
+    "user": {
+        "id": 1,
+        "name": "Davi",
+        "email": "voce@exemplo.com",
+        "date_joined": "2026-08-21T15:17:37.192010-03:00"
+    }
+}
+```
+
+A senha passa pelos validadores do Django. Senha curta, comum ou só de números
+volta 400 com a lista de motivos em `password`.
+
+### 2. Entrar
+
+**Request:**
+```http
+POST {{api_url}}/auth/login/
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+    "email": "voce@exemplo.com",
+    "password": "sua-senha-forte"
+}
+```
+
+Devolve o mesmo corpo do cadastro. E-mail inexistente e senha errada respondem
+400 com a mesma mensagem — de propósito, para não revelar quem tem conta.
+
+### 3. Usar o token
+
+```http
+GET {{api_url}}/urls/
+Authorization: Bearer {{access_token}}
+```
+
+Sem o cabeçalho, a lista responde 401. O access dura 30 minutos.
+
+### 4. Renovar o access
+
+**Request:**
+```http
+POST {{api_url}}/auth/refresh/
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+}
+```
+
+**Response (200 OK):** um `access` novo e também um `refresh` novo — o anterior
+vai para a blacklist e não serve mais.
+
+### 5. Sair
+
+```http
+POST {{api_url}}/auth/logout/
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+}
+```
+
+**Response:** 204 No Content. O refresh é invalidado; o access continua valendo
+até expirar, o que é inerente a um token assinado.
+
+### 6. Conta do token
+
+```http
+GET {{api_url}}/auth/me/
+Authorization: Bearer {{access_token}}
+```
 
 ---
 

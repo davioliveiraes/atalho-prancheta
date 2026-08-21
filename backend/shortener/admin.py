@@ -53,6 +53,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
     list_display = [
         "short_code",
         "original_url_truncated",
+        "owner_display",
         "status_badge",
         "click_stats",
         "qr_preview",
@@ -61,13 +62,16 @@ class ShortenedURLAdmin(admin.ModelAdmin):
     ]
 
     list_filter = [
+        # RelatedOnly para a lista trazer so quem tem link, e nao a base
+        # inteira de contas.
+        ("owner", admin.RelatedOnlyFieldListFilter),
         "is_active",
         "created_at",
         "expires_at",
         "max_clicks",
     ]
 
-    search_fields = ["short_code", "original_url"]
+    search_fields = ["short_code", "original_url", "owner__email"]
 
     readonly_fields = [
         "short_code",
@@ -90,7 +94,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             "Informacoes Basicas",
-            {"fields": ("original_url", "short_code", "short_url_full")},
+            {"fields": ("original_url", "short_code", "short_url_full", "owner")},
         ),
         (
             "QR Code",
@@ -131,11 +135,18 @@ class ShortenedURLAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        qs = super().get_queryset(request).select_related("owner")
         return qs.annotate(
             clicks_count=Count("clicks"),
             unique_ips_count=Count("clicks__ip_address", distinct=True),
         )
+
+    @admin.display(description="Dono", ordering="owner__email")
+    def owner_display(self, obj):
+        """Conta dona do link. Travessão quando foi criado sem conta."""
+        if obj.owner_id is None:
+            return format_html('<span style="color: #999;">— sem conta</span>')
+        return obj.owner.email or obj.owner.username
 
     def original_url_truncated(self, obj):
         url = obj.original_url
