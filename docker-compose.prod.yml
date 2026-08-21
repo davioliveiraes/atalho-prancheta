@@ -1,0 +1,149 @@
+# Pilha de produção — a VPS.
+#
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# É um arquivo completo, não um complemento do docker-compose.yml: o de
+# desenvolvimento monta o código do host, roda o runserver e publica a porta do
+# banco, e nada disso deve existir num servidor exposto. O passo a passo está em
+# DEPLOY.md.
+
+name: atalho-prancheta
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: atalho_prancheta_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-atalho_prancheta}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Sem porta publicada: quem fala com o banco é o backend, pela rede interna.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - prancheta_network
+
+  redis:
+    image: redis:8-alpine
+    container_name: atalho_prancheta_redis
+    restart: always
+    command: >
+      redis-server --save "" --appendonly no
+      --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - prancheta_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: atalho-prancheta-backend:prod
+    container_name: atalho_prancheta_backend
+    restart: always
+    # collectstatic antes do gunicorn: com DEBUG=False o whitenoise usa o
+    # storage com manifesto, e sem os arquivos coletados o admin quebra.
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application
+             --bind 0.0.0.0:8000
+             --workers ${WEB_CONCURRENCY:-3}
+             --access-logfile - --error-logfile -"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      # O nginx alcança o backend por este nome dentro da rede do Compose.
+      INTERNAL_ALLOWED_HOSTS: backend
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    # Sem porta publicada: só o nginx entra, e pela rede interna.
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health/').status==200 else 1)\"",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - prancheta_network
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    image: atalho-prancheta-frontend:prod
+    container_name: atalho_prancheta_web
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?defina DOMAIN no .env}
+    volumes:
+      - ./deploy/nginx:/etc/nginx/templates:ro
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+      - static_volume:/var/www/static:ro
+      - media_volume:/var/www/media:ro
+    # Recarrega a configuração de tempos em tempos para pegar o certificado
+    # renovado sem reiniciar o container.
+    command: >
+      sh -c "while :; do sleep 12h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - prancheta_network
+
+  # Renovação do certificado. A emissão inicial é um comando à parte, descrito
+  # em DEPLOY.md; daqui em diante este serviço cuida sozinho.
+  certbot:
+    image: certbot/certbot:latest
+    container_name: atalho_prancheta_certbot
+    restart: always
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: >
+      sh -c "trap exit TERM; while :; do
+      certbot renew --webroot -w /var/www/certbot --quiet;
+      sleep 12h & wait $${!}; done"
+    networks:
+      - prancheta_network
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+  certbot_conf:
+  certbot_www:
+
+networks:
+  prancheta_network:
+    driver: bridge

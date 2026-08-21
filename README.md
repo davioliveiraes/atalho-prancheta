@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-159%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
+[![Tests](https://img.shields.io/badge/Tests-161%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
 
 ---
 
@@ -30,7 +30,7 @@
 - [Uso](#uso)
 - [API Endpoints](#api-endpoints)
 - [Testes](#testes)
-- [Demo Online](#demo-online)
+- [Deploy](#deploy)
 - [Documentação](#documentação)
 - [Contribuindo](#contribuindo)
 
@@ -42,7 +42,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 
 ### Destaques
 
-- ✅ **159 testes automatizados** com 100% de sucesso
+- ✅ **161 testes automatizados** com 100% de sucesso
 - ✅ **Cobertura completa** de models, serializers e views
 - ✅ **Código limpo** seguindo PEP 8 e boas práticas
 - ✅ **Dockerizado** para fácil deployment
@@ -304,6 +304,12 @@ curl -X POST http://localhost:8000/api/auth/register/ \
 | GET | `/api/urls/{code}/statistics/` | Estatísticas | Dono, ou qualquer um se o link não tem dono |
 | GET | `/api/urls/{code}/qrcode/` | QR Code | Dono, ou qualquer um se o link não tem dono |
 
+### Saúde
+
+| Método | Endpoint | Descrição | Acesso |
+|--------|----------|-----------|--------|
+| GET | `/api/health/` | 200 com o banco no ar, 503 sem ele | Público |
+
 ### Redirect
 
 | Método | Endpoint | Descrição |
@@ -333,11 +339,11 @@ docker compose run --rm backend python manage.py test
 
 **Resultado:**
 ```
-Found 159 test(s).
+Found 161 test(s).
 System check identified no issues (0 silenced).
-...............................................................................................................................................................
+.................................................................................................................................................................
 ----------------------------------------------------------------------
-Ran 159 tests in 25.632s
+Ran 161 tests in 22.580s
 
 OK
 ```
@@ -353,59 +359,37 @@ OK
 - ✅ **Posse dos links** (18 testes) - Isolamento entre contas e link sem dono
 - ✅ **Comandos** (7 testes) - `adotar_links`
 - ✅ **Teto de criação** (5 testes) - Limite por IP e por conta
+- ✅ **Saúde** (2 testes) - `/api/health/`, o que o orquestrador consulta
 
 ---
 
-## Demo Online
+## Deploy
 
-> ⚠️ **Demonstração temporária** para fins de portfólio.
+A aplicação roda numa VPS com Docker: Postgres, Redis, o backend em gunicorn e
+um nginx que serve a interface e faz o proxy da API, com certificado do Let's
+Encrypt renovado sozinho.
 
-**API em Produção:** https://url-shortener-api-9h2j.onrender.com
-
-### Teste Rápido:
 ```bash
-# Listar URLs
-curl https://url-shortener-api-9h2j.onrender.com/api/urls/
-
-# Criar URL encurtada
-curl -X POST https://url-shortener-api-9h2j.onrender.com/api/urls/ \
-  -H "Content-Type: application/json" \
-  -d '{"original_url": "https://github.com/davioliveiraes"}'
-
-# Redirecionar (substitua {code})
-https://url-shortener-api-9h2j.onrender.com/api/r/{code}/
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-### Django Admin:
-- **URL:** https://url-shortener-api-9h2j.onrender.com/admin/
-- **User:** admin (senha disponível sob solicitação)
+O passo a passo completo — certificado, variáveis de ambiente, atualização e
+backup — está em [`DEPLOY.md`](DEPLOY.md).
 
-### ⚠️ Nota sobre QR Codes:
+### O que muda em relação ao desenvolvimento
 
-Os QR Codes são gerados automaticamente, mas devido ao **storage efêmero do Render**, as imagens não persistem entre deploys.
+| | Desenvolvimento | VPS |
+|---|---|---|
+| Arquivo | `docker-compose.yml` | `docker-compose.prod.yml` |
+| Backend | `runserver`, código montado do host | gunicorn, código na imagem |
+| Interface | Vite com HMR na 5173 | build estático servido pelo nginx |
+| Banco | porta 5433 publicada | rede interna, sem porta |
+| `/media/` | servido pelo Django | servido pelo nginx a partir do volume |
+| TLS | não | nginx + certbot |
 
-**Para produção real:** AWS S3 ou Cloudinary
-**Para visualizar QR Codes:** Rode localmente com Docker
-
-### Características do Deploy:
-- ✅ PostgreSQL 16 em produção
-- ✅ Gunicorn + WhiteNoise
-- ✅ SSL/HTTPS automático
-- ✅ CI/CD via GitHub
-- ✅ 68 testes (100% passing)
-
-### Endpoints Principais:
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/api/urls/` | Lista URLs |
-| POST | `/api/urls/` | Cria URL |
-| GET | `/api/urls/{code}/` | Detalhes |
-| GET | `/api/urls/{code}/statistics/` | Estatísticas |
-| GET | `/api/urls/{code}/qrcode/` | QR Code* |
-| GET | `/api/r/{code}/` | Redireciona |
-
-> *QR Codes funcionam via download. Para persistência, configure storage externo.
+> Com `DEBUG=False` o Django não publica `MEDIA_URL` — o `static()` do
+> `config/urls.py` devolve lista vazia fora do modo de depuração. Por isso os QR
+> Codes são servidos pelo nginx direto do volume, e não pelo gunicorn.
 
 ---
 

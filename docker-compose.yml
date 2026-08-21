@@ -71,7 +71,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/urls/').status==200 else 1)\"",
+          "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health/').status==200 else 1)\"",
         ]
       interval: 15s
       timeout: 5s

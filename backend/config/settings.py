@@ -43,11 +43,6 @@ for internal_host in INTERNAL_ALLOWED_HOSTS:
     if internal_host and internal_host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(internal_host)
 
-# Render.com specific
-RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)  # type: ignore
-
 # Quantos proxies reversos confiaveis existem na frente da aplicacao.
 #
 # X-Forwarded-For e escrito pelo cliente e so vira confiavel depois que um proxy
@@ -56,13 +51,11 @@ if RENDER_EXTERNAL_HOSTNAME:
 # proprio cliente enviou e pode ser forjado.
 #
 # 0 (padrao) = acesso direto, ignora o cabecalho e usa REMOTE_ADDR.
-# 1 = um proxy (nginx do compose, Render, Cloudflare).
-# Aumente apenas se houver proxies confiaveis encadeados.
-TRUSTED_PROXY_COUNT = config(
-    "TRUSTED_PROXY_COUNT",
-    default=1 if RENDER_EXTERNAL_HOSTNAME else 0,
-    cast=int,
-)
+# 1 = um proxy: e o caso da VPS, onde o nginx esta na frente do gunicorn.
+# 2 = dois, por exemplo com a Cloudflare na frente desse nginx.
+# Aumente apenas com proxies confiaveis encadeados — cada unidade a mais confia
+# em uma entrada que o cliente pode ter forjado.
+TRUSTED_PROXY_COUNT = config("TRUSTED_PROXY_COUNT", default=0, cast=int)
 
 # Application definition
 
@@ -120,7 +113,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL:
-    # producao render
+    # DATABASE_URL num so campo, no formato postgres://usuario:senha@host:porta/base
     DATABASES = {
         "default": dj_database_url.config(
             default=DATABASE_URL,
@@ -206,6 +199,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Origens em que o Django confia para o CSRF (o formulario de login do admin,
+# por exemplo). Atras de um proxy TLS a comparacao e feita contra esta lista, e
+# sem o dominio aqui o login responde 403 mesmo com a senha certa.
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 
 # Cache
 
@@ -303,7 +301,9 @@ SIMPLE_JWT = {
 }
 
 if not DEBUG:
-    SECURE_SSL_REDIRECT = False
+    # O desvio de http para https e feito pelo nginx, antes da requisicao chegar
+    # ao gunicorn. Ligue apenas se um dia o Django ficar exposto sem proxy.
+    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

@@ -1,0 +1,106 @@
+# Nginx da VPS.
+#
+# A imagem do nginx roda `envsubst` nos arquivos de /etc/nginx/templates e grava
+# o resultado em /etc/nginx/conf.d — por isso ${DOMAIN} aqui e o nome do domínio
+# lá. Só variáveis que existem no ambiente são trocadas, então $host, $scheme e
+# companhia chegam intactos ao arquivo final.
+#
+# Este arquivo sobrescreve o `frontend/nginx.conf` que veio na imagem, que serve
+# ao perfil de desenvolvimento e não conhece TLS.
+
+# ---------------------------------------------------------------- HTTP (80)
+#
+# Só existe para dois fins: responder ao desafio do Let's Encrypt e mandar o
+# resto para o https.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# --------------------------------------------------------------- HTTPS (443)
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    # Um ano, e o navegador passa a recusar http neste domínio por conta própria.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # O corpo maior que a API aceita é uma URL de 2048 caracteres.
+    client_max_body_size 1m;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # QR Codes, servidos do volume.
+    #
+    # Não é otimização: com DEBUG=False o Django não publica MEDIA_URL — o
+    # helper `static()` do urls.py devolve lista vazia fora do modo de
+    # depuração. Se o nginx não servir estes arquivos, ninguém serve.
+    location /media/ {
+        alias /var/www/media/;
+        expires 30d;
+        access_log off;
+    }
+
+    # CSS e JS do admin, gravados pelo collectstatic no mesmo volume.
+    location /static/ {
+        alias /var/www/static/;
+        expires 30d;
+        access_log off;
+    }
+
+    # A API e o redirecionamento dos links (/api/r/{codigo}/).
+    #
+    # X-Forwarded-For é o que permite contar clique único por IP: o Django lê a
+    # última entrada porque TRUSTED_PROXY_COUNT=1 declara este proxy.
+    # X-Forwarded-Proto é o que faz o Django saber que a requisição veio por
+    # https e montar as URLs absolutas do jeito certo.
+    location /api/ {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    location /admin/ {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
+    # A interface é uma página só: qualquer caminho desconhecido volta para o
+    # index e quem resolve a rota é o roteador do React.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

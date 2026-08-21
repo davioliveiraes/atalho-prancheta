@@ -146,6 +146,18 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: "Saúde",
+    cell: "1 rota",
+    routes: [
+      {
+        method: "GET",
+        path: "/api/health/",
+        text: "Responde 200 com o banco no ar e 503 sem ele. É o que o orquestrador consulta.",
+        access: "publico",
+      },
+    ],
+  },
+  {
     title: "Redirecionamento",
     cell: "1 rota",
     note: "É o endereço que se divulga. Inativo, expirado ou no teto de cliques únicos, ele responde 403 e não revela o destino.",
