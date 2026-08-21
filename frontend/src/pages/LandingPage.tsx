@@ -52,121 +52,130 @@ export function LandingPage() {
 
   return (
     <>
-      {/* Herói */}
-      <section
-        className="shell grid grid-7-5"
-        style={{
-          paddingTop: mobile ? 32 : 72,
-          paddingBottom: mobile ? 40 : 48,
-          gap: mobile ? 32 : 64,
-          alignItems: "start",
-        }}
-      >
-        <div className="stack" style={{ gap: 24 }}>
-          <h1 className="display">
-            <span style={{ display: "block" }}>Encurte o link.</span>
-            <span style={{ display: "block" }}>Meça cada clique.</span>
-          </h1>
+      <div className="screen">
+        {/* Herói — primeira tela cheia */}
+        <section
+          className="shell grid grid-7-5 screen-body"
+          style={{
+            // No desktop o padding e simetrico: a tela cheia ja centra o bloco,
+            // entao a assimetria de antes deslocaria o centro optico.
+            paddingTop: mobile ? 32 : 56,
+            paddingBottom: mobile ? 40 : 56,
+            gap: mobile ? 32 : 64,
+            alignItems: "start",
+          }}
+        >
+          <div className="stack" style={{ gap: 24 }}>
+            <h1 className="display">
+              <span style={{ display: "block" }}>Encurte o link.</span>
+              <span style={{ display: "block" }}>Meça cada clique.</span>
+            </h1>
 
-          <p className="lede" style={{ lineHeight: "24px", maxWidth: "56ch" }}>
-            {mobile
-              ? "Código curto, QR Code e contagem de cliques totais e únicos por IP."
-              : "Cole a URL, receba um código curto e um QR Code. A contagem separa cliques totais de únicos por IP, e você pode fechar o link por data de expiração ou por limite de acessos."}
-          </p>
+            <p className="lede" style={{ lineHeight: "24px", maxWidth: "56ch" }}>
+              {mobile
+                ? "Código curto, QR Code e contagem de cliques totais e únicos por IP."
+                : "Cole a URL, receba um código curto e um QR Code. A contagem separa cliques totais de únicos por IP, e você pode fechar o link por data de expiração ou por limite de acessos."}
+            </p>
 
-          <form
-            onSubmit={submit}
-            className={mobile ? "stack-mobile" : undefined}
-            style={{ display: "flex", gap: 10, alignItems: "stretch", maxWidth: 640 }}
-          >
-            <label className="sr-only" htmlFor="original_url">
-              URL de destino
-            </label>
-            <input
-              id="original_url"
-              className="input"
-              type="url"
-              required
-              placeholder="https://exemplo.com/pagina"
-              value={url}
-              aria-invalid={urlError ? true : undefined}
-              style={{ flex: 1, minHeight: mobile ? 48 : 44, fontSize: 15 }}
-              onChange={(event) => setUrl(event.target.value)}
-            />
-            <button
-              className="btn btn-primary"
-              type="submit"
-              disabled={busy || !url}
-              style={{ minHeight: mobile ? 48 : 44, paddingInline: 22 }}
+            <form
+              onSubmit={submit}
+              className={mobile ? "stack-mobile" : undefined}
+              style={{ display: "flex", gap: 10, alignItems: "stretch", maxWidth: 640 }}
             >
-              {busy ? "Encurtando…" : "Encurtar"}
-            </button>
-          </form>
+              <label className="sr-only" htmlFor="original_url">
+                URL de destino
+              </label>
+              <input
+                id="original_url"
+                className="input"
+                type="url"
+                required
+                placeholder="https://exemplo.com/pagina"
+                value={url}
+                aria-invalid={urlError ? true : undefined}
+                style={{ flex: 1, minHeight: mobile ? 48 : 44, fontSize: 15 }}
+                onChange={(event) => setUrl(event.target.value)}
+              />
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={busy || !url}
+                style={{ minHeight: mobile ? 48 : 44, paddingInline: 22 }}
+              >
+                {busy ? "Encurtando…" : "Encurtar"}
+              </button>
+            </form>
 
-          {urlError && <ErrorLine>{urlError}</ErrorLine>}
+            {urlError && <ErrorLine>{urlError}</ErrorLine>}
 
-          <p
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 12,
-              fontSize: 13,
-              lineHeight: "20px",
-              color: "var(--ink-meta)",
-            }}
-          >
-            <button
-              type="button"
-              className="btn btn-ghost"
+            <p
               style={{
-                // padding de 12px é a área de toque da 1h; o minHeight garante
-                // os 44px do checklist, que só o padding não alcança.
-                height: "auto",
-                minHeight: mobile ? 44 : undefined,
-                padding: mobile ? "12px 0" : 0,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 12,
                 fontSize: 13,
-                color: "var(--color-accent-700)",
+                lineHeight: "20px",
+                color: "var(--ink-meta)",
               }}
-              onClick={() => setAdvanced(true)}
             >
-              Opções avançadas
-            </button>
-            <span>código personalizado · expiração · limite de cliques</span>
-          </p>
-        </div>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                style={{
+                  // padding de 12px é a área de toque da 1h; o minHeight garante
+                  // os 44px do checklist, que só o padding não alcança.
+                  height: "auto",
+                  minHeight: mobile ? 44 : undefined,
+                  padding: mobile ? "12px 0" : 0,
+                  fontSize: 13,
+                  color: "var(--color-accent-700)",
+                }}
+                onClick={() => setAdvanced(true)}
+              >
+                Opções avançadas
+              </button>
+              <span>código personalizado · expiração · limite de cliques</span>
+            </p>
+          </div>
 
-        <ResultPlate link={created} onQr={() => setQrOpen(true)} mobile={mobile} />
-      </section>
+          <ResultPlate link={created} onQr={() => setQrOpen(true)} mobile={mobile} />
+        </section>
+      </div>
 
-      {/* Faixa de medições */}
-      <section className="shell" style={{ paddingTop: 24, paddingBottom: 72 }}>
-        <p className="kicker">02 · O que a API mede</p>
-        <hr className="rule" style={{ marginTop: 12, marginBottom: 40 }} />
-        <div className="grid grid-3" style={{ gap: mobile ? 24 : 40 }}>
-          {MEASURES.map((item) => (
-            <Plate as="article" key={item.title}>
-              <div className="stack" style={{ padding: 24, gap: 12 }}>
-                <h3 style={{ fontSize: 22, lineHeight: "24px" }}>{item.title}</h3>
-                <p style={{ fontSize: 15, lineHeight: "24px", color: "var(--ink-secondary)" }}>
-                  {item.text}
-                </p>
-              </div>
-            </Plate>
-          ))}
-        </div>
-      </section>
+      <div className="screen">
+        {/* Faixa de medições — segunda tela cheia, com o rodapé no pé dela */}
+        <section
+          className="shell screen-body screen-spread"
+          style={{ paddingTop: mobile ? 24 : 56, paddingBottom: mobile ? 40 : 56 }}
+        >
+          <p className="kicker">02 · O que a API mede</p>
+          <hr className="rule" style={{ marginTop: 12, marginBottom: 40 }} />
+          <div className="grid grid-3 screen-middle" style={{ gap: mobile ? 24 : 40 }}>
+            {MEASURES.map((item) => (
+              <Plate as="article" key={item.title}>
+                <div className="stack" style={{ padding: 24, gap: 12 }}>
+                  <h3 style={{ fontSize: 22, lineHeight: "24px" }}>{item.title}</h3>
+                  <p style={{ fontSize: 15, lineHeight: "24px", color: "var(--ink-secondary)" }}>
+                    {item.text}
+                  </p>
+                </div>
+              </Plate>
+            ))}
+          </div>
+        </section>
 
-      <footer
-        style={{
-          padding: "20px var(--gutter)",
-          borderTop: "1px solid var(--color-divider)",
-          fontSize: 13,
-          lineHeight: "20px",
-          color: "var(--ink-small)",
-        }}
-      >
-        Atalho Prancheta · API Django REST Framework · /api/urls/
-      </footer>
+        <footer
+          style={{
+            padding: "20px var(--gutter)",
+            borderTop: "1px solid var(--color-divider)",
+            fontSize: 13,
+            lineHeight: "20px",
+            color: "var(--ink-small)",
+          }}
+        >
+          Atalho Prancheta · API Django REST Framework · /api/urls/
+        </footer>
+      </div>
 
       <QrDialog
         open={qrOpen}

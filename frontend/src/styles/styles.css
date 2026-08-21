@@ -66,6 +66,10 @@
 
   /* Alvo de toque */
   --control-h: 38px;
+
+  /* Altura da barra fixa: 44px de controle + 16px de padding em cima e embaixo
+     + 1px de borda. As telas cheias descontam isso do viewport. */
+  --nav-h: 77px;
 }
 
 @media (max-width: 900px) {
@@ -245,6 +249,55 @@ img {
   max-width: var(--measure);
   margin: 0 auto;
   padding: 0 var(--gutter);
+}
+
+/* Telas cheias da landing.
+
+   Cada bloco ocupa exatamente uma altura de viewport descontando a barra fixa,
+   de modo que a rolagem caia na tela seguinte inteira em vez de meio conteudo.
+   `min-height` e nao `height`: em janela baixa o conteudo cresce e empurra a
+   pagina, nunca fica cortado.
+
+   Abaixo de 900px isso nao vale — no telefone o conteudo e mais alto que a tela
+   e a barra do navegador muda de altura durante a rolagem. */
+.screen {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 901px) {
+  /* Trava a barra na altura que --nav-h declara: se as duas divergirem, as telas
+     cheias passam a sobrar ou faltar exatamente essa diferenca. So no desktop —
+     no mobile a barra e mais baixa de proposito e nao ha tela cheia. */
+  .nav {
+    min-height: var(--nav-h);
+  }
+
+  .screen {
+    min-height: calc(100vh - var(--nav-h));
+    /* svh ignora a barra retratil do navegador; sobrescreve o vh onde existe. */
+    min-height: calc(100svh - var(--nav-h));
+  }
+
+  /* Margem automatica nos dois lados centra o bloco na sobra vertical. Com o
+     rodape depois dele, a sobra se divide e o rodape encosta no fim da tela. */
+  .screen > .screen-body {
+    margin-block: auto;
+  }
+
+  /* Variante distribuida: em vez de flutuar centrado, o bloco toma a tela e
+     espalha o proprio conteudo — cabecalho encostado no topo, corpo no meio.
+     Usada onde centrar tudo junto deixaria a tela com ar demais nas pontas. */
+  .screen > .screen-spread {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-block: 0;
+  }
+
+  .screen > .screen-spread > .screen-middle {
+    margin-block: auto;
+  }
 }
 
 /* Bloco emoldurado — desenho de linha, nunca preenchido */
