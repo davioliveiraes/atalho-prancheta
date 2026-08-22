@@ -120,7 +120,7 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
         user = request.user if request.user.is_authenticated else None
         instance = serializer.save(owner=user)
 
-        short_url = request.build_absolute_uri(f"/api/r/{instance.short_code}")
+        short_url = request.build_absolute_uri(f"/{instance.short_code}")
         qr_code_file = generate_qr_code(short_url, instance.short_code)
         instance.qr_code.save(f"{instance.short_code}.png", qr_code_file, save=True)
 

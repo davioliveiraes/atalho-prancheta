@@ -9,6 +9,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Click, ShortenedURL
+from .reserved import is_reserved
 
 
 class ClickSerializer(serializers.ModelSerializer):
@@ -69,8 +70,8 @@ class ShortenedURLListSerializer(serializers.ModelSerializer):
     def get_short_url(self, obj):
         request = self.context.get("request")
         if request:
-            return request.build_absolute_uri(f"/api/r/{obj.short_code}")
-        return f"/api/r/{obj.short_code}"
+            return request.build_absolute_uri(f"/{obj.short_code}")
+        return f"/{obj.short_code}"
 
     def get_status(self, obj):
         can_access, message = obj.can_be_accessed()
@@ -127,8 +128,8 @@ class ShortenedURLDetailSerializer(serializers.ModelSerializer):
     def get_short_url(self, obj):
         request = self.context.get("request")
         if request:
-            return request.build_absolute_uri(f"/api/r/{obj.short_code}")
-        return f"/api/r/{obj.short_code}"
+            return request.build_absolute_uri(f"/{obj.short_code}")
+        return f"/{obj.short_code}"
 
     def get_statistics(self, obj):
         return {
@@ -177,6 +178,13 @@ class ShortenedURLCreateSerializer(serializers.ModelSerializer):
                     "Este codigo curto ja esta em uso. Escolha outro."
                 )
 
+            # O link curto mora na raiz do dominio, junto das telas: um codigo
+            # `painel` tiraria o painel do ar.
+            if is_reserved(value):
+                raise serializers.ValidationError(
+                    "Este codigo e reservado pela aplicacao. Escolha outro."
+                )
+
             if not value.isalnum():
                 raise serializers.ValidationError(
                     "Codigo curto deve conter apenas letras e numeros."
@@ -203,6 +211,10 @@ class ShortenedURLCreateSerializer(serializers.ModelSerializer):
 
             while True:
                 short_code = "".join(random.choices(string.ascii_letters + string.digits, k=6))
+                # `painel` tem exatamente seis caracteres: improvavel nao e
+                # impossivel, e o sorteio nao pode entregar a rota de ninguem.
+                if is_reserved(short_code):
+                    continue
                 if not ShortenedURL.objects.filter(short_code=short_code):
                     validated_data["short_code"] = short_code
                     break

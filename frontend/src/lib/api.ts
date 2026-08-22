@@ -274,7 +274,10 @@ export const linkApi = {
   },
 };
 
-/** Endereço do redirect real do backend, que contabiliza o clique. */
+/**
+ * Endereço divulgável do link — é ele que conta o clique.
+ * Mora na raiz do domínio, e não sob `/api`: `atalho.com/abc123`.
+ */
 export function redirectUrl(shortCode: string) {
-  return `${API_ROOT}/r/${shortCode}/`;
+  return `${window.location.origin}/${shortCode}`;
 }

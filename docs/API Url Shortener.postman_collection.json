@@ -788,14 +788,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{api_url}}/r/{{auto_short_code}}/",
+							"raw": "{{base_url}}/{{auto_short_code}}",
 							"host": [
-								"{{api_url}}"
+								"{{base_url}}"
 							],
 							"path": [
-								"r",
-								"{{auto_short_code}}",
-								""
+								"{{auto_short_code}}"
 							]
 						}
 					},
@@ -850,14 +848,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{api_url}}/r/linkedin/",
+							"raw": "{{base_url}}/linkedin",
 							"host": [
-								"{{api_url}}"
+								"{{base_url}}"
 							],
 							"path": [
-								"r",
-								"linkedin",
-								""
+								"linkedin"
 							]
 						}
 					},
@@ -885,14 +881,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{api_url}}/r/codigonaoexiste123/",
+							"raw": "{{base_url}}/naoexiste1",
 							"host": [
-								"{{api_url}}"
+								"{{base_url}}"
 							],
 							"path": [
-								"r",
-								"codigonaoexiste123",
-								""
+								"naoexiste1"
 							]
 						}
 					},

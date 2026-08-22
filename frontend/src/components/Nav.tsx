@@ -90,8 +90,8 @@ export function Nav() {
         </Link>
         <Link
           className="nav-link"
-          to="/api"
-          aria-current={pathname === "/api" ? "page" : undefined}
+          to="/referencia"
+          aria-current={pathname === "/referencia" ? "page" : undefined}
           onClick={() => setOpen(false)}
         >
           API

@@ -238,7 +238,13 @@ inicialização do container.
 Django: com `DEBUG=False` o `static()` do `config/urls.py` devolve lista vazia,
 então nada sob `/media/` sairia pelo gunicorn.
 
-**Endereço dos links.** O código encurtado responde em
-`https://seudominio.com.br/api/r/{codigo}/`. Se quiser encurtar o próprio
-endereço — servir em `/{codigo}` direto — é uma mudança de rota no backend e no
-`redirectUrl` do frontend, e quebra os links já divulgados.
+**Endereço dos links.** O código responde na raiz:
+`https://seudominio.com.br/{codigo}`. Isso divide a raiz do domínio entre os
+links e as telas da interface, e é o `location` por expressão do
+[`deploy/nginx/default.conf.template`](deploy/nginx/default.conf.template) que
+separa os dois — a lista de nomes excluídos ali é a mesma de
+`backend/shortener/reserved.py`. **Criou tela nova na interface? O nome dela
+entra nos dois lugares**, senão um link pode roubar a rota.
+
+O endereço antigo, `/api/r/{codigo}/`, continua respondendo: os QR Codes já
+impressos apontam para ele.

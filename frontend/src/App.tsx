@@ -16,8 +16,10 @@ function resolve(pathname: string) {
   if (segments.length === 0) return <LandingPage />;
 
   if (segments.length === 1) {
-    // Referência da API: aberta, como a própria API para quem só quer encurtar.
-    if (segments[0] === "api") return <ApiPage />;
+    // A referência da API, aberta como a própria API. Não mora em `/api`: esse
+    // caminho é do backend, e o nginx de produção redireciona `/api` para
+    // `/api/`, que é a raiz da API de máquina.
+    if (segments[0] === "referencia") return <ApiPage />;
 
     // O painel lista por dono: sem sessão não há o que listar.
     if (segments[0] === "painel") {

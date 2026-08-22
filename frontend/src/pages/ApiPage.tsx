@@ -160,11 +160,11 @@ const GROUPS: Group[] = [
   {
     title: "Redirecionamento",
     cell: "1 rota",
-    note: "É o endereço que se divulga. Inativo, expirado ou no teto de cliques únicos, ele responde 403 e não revela o destino.",
+    note: "É o endereço que se divulga, na raiz do domínio. Inativo, expirado ou no teto de cliques únicos, ele responde 403 e não revela o destino.",
     routes: [
       {
         method: "GET",
-        path: "/api/r/{codigo}/",
+        path: "/{codigo}",
         text: "Conta o clique — total sempre, único uma vez por IP — e redireciona para o destino atual.",
         access: "publico",
       },
@@ -193,7 +193,7 @@ const CREATE_RESPONSE = `201 Created
 
 {
   "short_code": "atalho",
-  "short_url": "http://localhost:8000/api/r/atalho",
+  "short_url": "http://localhost:8000/atalho",
   "original_url": "https://exemplo.com/pagina",
   "qr_code": "http://localhost:8000/media/qrcodes/atalho.png",
   "is_active": true,

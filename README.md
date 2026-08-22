@@ -187,11 +187,11 @@ docker compose exec backend python manage.py adotar_links voce@exemplo.com
 - Frontend: http://localhost:5173/
 - Criar conta: http://localhost:5173/criar-conta — o painel (`/painel`) exige conta;
   encurtar na home continua aberto
-- Referência da API: http://localhost:5173/api
+- Referência da API: http://localhost:5173/referencia
 - API: http://localhost:8000/api/urls/
 - Admin: http://localhost:8000/admin/
 
-> A referência em `/api` lista as rotas e o acesso que cada uma exige. Os exemplos
+> A referência em `/referencia` lista as rotas e o acesso que cada uma exige. Os exemplos
 > de corpo completo estão em [`docs/EXAMPLES.md`](docs/EXAMPLES.md), com a coleção
 > Postman em [`docs/`](docs/).
 
@@ -214,7 +214,7 @@ curl -X POST http://localhost:8000/api/urls/ \
   "id": 1,
   "short_code": "abc123",
   "original_url": "https://github.com/yourusername",
-  "short_url": "http://localhost:8000/api/r/abc123/",
+  "short_url": "http://localhost:8000/abc123",
   "qr_code": "http://localhost:8000/media/qrcodes/abc123.png",
   "is_active": true,
   "total_clicks": 0,
@@ -225,7 +225,7 @@ curl -X POST http://localhost:8000/api/urls/ \
 
 ### Redirecionar
 ```bash
-curl -L http://localhost:8000/api/r/abc123/
+curl -L http://localhost:8000/abc123
 # Redireciona para https://github.com/yourusername
 ```
 
@@ -314,7 +314,8 @@ curl -X POST http://localhost:8000/api/auth/register/ \
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| GET | `/api/r/{code}/` | Redireciona para URL original |
+| GET | `/{code}` | Redireciona para URL original e conta o clique |
+| GET | `/api/r/{code}/` | Mesmo destino, endereço antigo — mantido pelos links já divulgados |
 
 ### Filtros e Busca
 ```bash

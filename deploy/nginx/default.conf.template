@@ -98,6 +98,24 @@ server {
         proxy_redirect off;
     }
 
+    # O link curto: /{codigo}.
+    #
+    # A raiz é dividida entre os links e as telas, então o padrão exclui os
+    # nomes reservados — a mesma lista de `backend/shortener/reserved.py`.
+    # A exclusão exige o nome inteiro: `/painel` não é link, mas `/painelx` é
+    # um código legítimo.
+    #
+    # Locations por expressão são testados antes do prefixo `/`, e por isso
+    # este bloco vence a interface sem precisar vir declarado primeiro.
+    location ~ "^/(?!(?:painel|links|entrar|criar-conta|referencia|api|admin|static|media|r)/?$)[A-Za-z0-9]{3,10}/?$" {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+
     # A interface é uma página só: qualquer caminho desconhecido volta para o
     # index e quem resolve a rota é o roteador do React.
     location / {

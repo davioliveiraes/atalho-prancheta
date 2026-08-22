@@ -7,7 +7,7 @@ import { ErrorLine } from "./elements";
 
 /** Prefixo real do host: o que a API vai devolver em `short_url`. */
 function codePrefix() {
-  return `${window.location.host}/api/r/`;
+  return `${window.location.host}/`;
 }
 
 export function NewLinkDialog({
