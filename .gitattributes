@@ -1,0 +1,5 @@
+# Um \r no fim do shebang quebra o script na VPS: estes arquivos rodam em
+# Linux, mesmo quando editados no Windows.
+*.sh text eol=lf
+*.conf text eol=lf
+*.template text eol=lf

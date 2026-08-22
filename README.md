@@ -374,8 +374,10 @@ Encrypt renovado sozinho.
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-O passo a passo completo — certificado, variáveis de ambiente, atualização e
-backup — está em [`DEPLOY.md`](DEPLOY.md).
+O passo a passo completo — certificado, variáveis de ambiente e atualização —
+está em [`DEPLOY.md`](DEPLOY.md). O backup do banco e dos QR Codes é o
+[`deploy/backup.sh`](deploy/backup.sh), uma linha de cron por dia, com retenção
+e envio opcional para fora da máquina.
 
 ### O que muda em relação ao desenvolvimento
 

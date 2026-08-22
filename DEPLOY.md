@@ -191,32 +191,102 @@ mídia não são tocados por um build.
 
 ---
 
-## 9. Backup
+## 9. Backup automático
 
-O que não pode ser perdido é o banco e os QR Codes.
+O que não pode ser perdido é o banco e os QR Codes. O
+[`deploy/backup.sh`](deploy/backup.sh) cuida dos dois.
 
-```bash
-# As credenciais do banco vivem no .env; traga-as para a sessão do shell.
-set -a; . ./.env; set +a
-
-# Banco
-docker compose -f docker-compose.prod.yml exec -T db \
-  pg_dump -U "$DB_USER" "$DB_NAME" | gzip > backup-$(date +%F).sql.gz
-
-# QR Codes
-docker run --rm -v atalho-prancheta_media_volume:/media -v "$PWD":/destino \
-  alpine tar czf /destino/media-$(date +%F).tar.gz -C /media .
-```
-
-Para restaurar o banco num ambiente vazio:
+### Instalar
 
 ```bash
-gunzip -c backup-2026-08-21.sql.gz | \
-  docker compose -f docker-compose.prod.yml exec -T db psql -U "$DB_USER" "$DB_NAME"
+sudo crontab -e
 ```
 
-Vale colocar as duas linhas de backup num cron diário e mandar o arquivo para
-fora da VPS — backup que mora no mesmo disco não é backup.
+Acrescente, trocando o caminho pelo lugar onde você clonou:
+
+```
+15 3 * * * /root/atalho-prancheta/deploy/backup.sh >> /var/log/atalho-backup.log 2>&1
+```
+
+É o crontab do root porque o script escreve em `/var/backups` e conversa com o
+Docker. Se preferir rodar como outro usuário, ele precisa estar no grupo
+`docker` e ter permissão de escrita no diretório de backup.
+
+### O que ele faz
+
+Toda madrugada, em `/var/backups/atalho-prancheta`:
+
+| Arquivo | Conteúdo |
+|---|---|
+| `banco-AAAA-MM-DD-HHMM.sql.gz` | `pg_dump` do Postgres |
+| `media-AAAA-MM-DD-HHMM.tar.gz` | o volume dos QR Codes |
+
+Guarda 14 dias e apaga o resto. Para mudar qualquer coisa, é variável de
+ambiente na própria linha do cron:
+
+```
+15 3 * * * KEEP_DAYS=30 BACKUP_DIR=/mnt/hd/backups /root/atalho-prancheta/deploy/backup.sh >> /var/log/atalho-backup.log 2>&1
+```
+
+Três cuidados que o script toma, e que valem saber:
+
+- **Dump que falha não vira backup.** Sem isso, um `pg_dump` interrompido ainda
+  produziria um `.gz` válido — vazio — e o backup se diria bem-sucedido até o
+  dia da restauração. O script confere o código de saída, a integridade do gzip
+  e o tamanho mínimo, e sai com erro em qualquer um dos três.
+- **Nada de arquivo pela metade.** Ele escreve em `.parcial` e só renomeia no
+  fim; uma execução interrompida não deixa um arquivo com nome de backup
+  completo.
+- **Uma execução por vez.** Se a de ontem ainda estiver rodando, a de hoje
+  desiste em vez de disputar o mesmo arquivo.
+
+### Conferir
+
+```bash
+tail -20 /var/log/atalho-backup.log
+ls -lh /var/backups/atalho-prancheta
+```
+
+O script sai com código diferente de zero quando falha, então o cron manda
+e-mail se a máquina tiver isso configurado.
+
+### Mandar para fora da VPS
+
+Backup que mora no mesmo disco do banco não é backup — o disco é justamente a
+coisa que pode morrer. Com o [rclone](https://rclone.org/) configurado, basta
+apontar o destino:
+
+```
+15 3 * * * BACKUP_REMOTE=b2:atalho-backups /root/atalho-prancheta/deploy/backup.sh >> /var/log/atalho-backup.log 2>&1
+```
+
+Serve qualquer destino que o rclone conheça: Backblaze B2, S3, Google Drive,
+outra máquina por SFTP.
+
+### Restaurar
+
+Num banco vazio, e não por cima do que existe:
+
+```bash
+docker compose -f docker-compose.prod.yml exec -T db psql -U "$DB_USER" -c "CREATE DATABASE restauracao"
+gunzip -c /var/backups/atalho-prancheta/banco-2026-08-21-0315.sql.gz |   docker compose -f docker-compose.prod.yml exec -T db psql -U "$DB_USER" -d restauracao
+```
+
+Os QR Codes voltam para o volume:
+
+```bash
+docker run --rm -v atalho-prancheta_media_volume:/media -v /var/backups/atalho-prancheta:/origem   alpine tar xzf /origem/media-2026-08-21-0315.tar.gz -C /media
+```
+
+> **Faça isso uma vez, agora, sem precisar.** Restaure num banco descartável e
+> confira que os dados estão lá:
+>
+> ```bash
+> docker compose -f docker-compose.prod.yml exec -T db >   psql -U "$DB_USER" -d restauracao -tAc "select count(*) from shortener_shortenedurl"
+> ```
+>
+> Backup que nunca foi restaurado é uma suposição, não um backup. Depois é só
+> `DROP DATABASE restauracao`.
 
 ---
 
