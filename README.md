@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-161%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
+[![Tests](https://img.shields.io/badge/Tests-173%20passing-brightgreen.svg)](https://github.com/davioliveiraes/url-shortener-api)
 
 ---
 
@@ -42,7 +42,7 @@ Aplicação full stack para criar atalhos permanentes. O código divulgado perma
 
 ### Destaques
 
-- ✅ **161 testes automatizados** com 100% de sucesso
+- ✅ **173 testes automatizados** com 100% de sucesso
 - ✅ **Cobertura completa** de models, serializers e views
 - ✅ **Código limpo** seguindo PEP 8 e boas práticas
 - ✅ **Dockerizado** para fácil deployment
@@ -187,6 +187,7 @@ docker compose exec backend python manage.py adotar_links voce@exemplo.com
 - Frontend: http://localhost:5173/
 - Criar conta: http://localhost:5173/criar-conta — o painel (`/painel`) exige conta;
   encurtar na home continua aberto
+- Como usar: http://localhost:5173/como-usar
 - Referência da API: http://localhost:5173/referencia
 - API: http://localhost:8000/api/urls/
 - Admin: http://localhost:8000/admin/
@@ -340,11 +341,11 @@ docker compose run --rm backend python manage.py test
 
 **Resultado:**
 ```
-Found 161 test(s).
+Found 173 test(s).
 System check identified no issues (0 silenced).
-.................................................................................................................................................................
+.............................................................................................................................................................................
 ----------------------------------------------------------------------
-Ran 161 tests in 22.580s
+Ran 173 tests in 27.505s
 
 OK
 ```
@@ -361,6 +362,7 @@ OK
 - ✅ **Comandos** (7 testes) - `adotar_links`
 - ✅ **Teto de criação** (5 testes) - Limite por IP e por conta
 - ✅ **Saúde** (2 testes) - `/api/health/`, o que o orquestrador consulta
+- ✅ **Rota curta** (12 testes) - `/{codigo}` na raiz e os nomes reservados
 
 ---
 
@@ -410,6 +412,12 @@ Importe a coleção completa do Postman:
 ### Exemplos de Uso
 
 Veja exemplos detalhados em [`docs/EXAMPLES.md`](docs/EXAMPLES.md)
+
+### Para demonstrar
+
+[`docs/roteiro-demonstracao.html`](docs/roteiro-demonstracao.html) — oito passos,
+com o que dizer em cada tela. Para quem vai *usar*, a explicação está na própria
+aplicação, em `/como-usar`.
 
 ---
 
