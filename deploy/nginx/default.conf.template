@@ -107,7 +107,7 @@ server {
     #
     # Locations por expressão são testados antes do prefixo `/`, e por isso
     # este bloco vence a interface sem precisar vir declarado primeiro.
-    location ~ "^/(?!(?:painel|links|entrar|criar-conta|referencia|api|admin|static|media|r)/?$)[A-Za-z0-9]{3,10}/?$" {
+    location ~ "^/(?!(?:painel|links|entrar|criar-conta|como-usar|referencia|api|admin|static|media|r)/?$)[A-Za-z0-9]{3,10}/?$" {
         proxy_pass http://backend:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

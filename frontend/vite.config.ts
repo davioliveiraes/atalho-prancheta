@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
         // O link curto mora na raiz: `/{codigo}` vai para o backend, o resto
         // continua sendo tela. A lista de exclusões espelha o
         // `backend/shortener/reserved.py`.
-        [`^/(?!(?:painel|links|entrar|criar-conta|referencia|api|admin|static|media|r)/?$)[A-Za-z0-9]{3,10}/?$`]:
+        [`^/(?!(?:painel|links|entrar|criar-conta|como-usar|referencia|api|admin|static|media|r)/?$)[A-Za-z0-9]{3,10}/?$`]:
           proxyRule,
       },
     },

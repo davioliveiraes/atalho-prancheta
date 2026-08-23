@@ -82,6 +82,14 @@ export function Nav() {
         </Link>
         <Link
           className="nav-link"
+          to="/como-usar"
+          aria-current={pathname === "/como-usar" ? "page" : undefined}
+          onClick={() => setOpen(false)}
+        >
+          Como usar
+        </Link>
+        <Link
+          className="nav-link"
           to="/painel"
           aria-current={pathname === "/painel" ? "page" : undefined}
           onClick={() => setOpen(false)}

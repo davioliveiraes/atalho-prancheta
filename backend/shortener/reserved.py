@@ -22,6 +22,7 @@ RESERVED_CODES = frozenset(
         "links",
         "entrar",
         "criar-conta",
+        "como-usar",
         "referencia",
         "api",
         # Servidas pelo backend

@@ -273,13 +273,18 @@ export function PanelPage() {
               title="Nenhum link ainda"
               text="Encurte a primeira URL para começar a acompanhar os cliques."
               action={
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => setCreating(true)}
-                >
-                  Criar o primeiro link
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => setCreating(true)}
+                  >
+                    Criar o primeiro link
+                  </button>
+                  <Link className="btn btn-ghost" to="/como-usar">
+                    Como usar
+                  </Link>
+                </>
               }
             />
           )
@@ -680,7 +685,9 @@ function EmptyState({
       <p style={{ fontSize: 15, lineHeight: "24px", color: "var(--ink-small)", maxWidth: "48ch" }}>
         {text}
       </p>
-      <div style={{ marginTop: 12 }}>{action}</div>
+      <div className="row row-wrap" style={{ marginTop: 12, justifyContent: "center" }}>
+        {action}
+      </div>
     </div>
   );
 }

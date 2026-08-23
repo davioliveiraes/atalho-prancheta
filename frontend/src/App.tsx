@@ -4,6 +4,7 @@ import { MobileBarProvider } from "./lib/mobileBar";
 import { Link, usePathname } from "./lib/router";
 import { ApiPage } from "./pages/ApiPage";
 import { CardsPanelPage } from "./pages/CardsPanelPage";
+import { ComoUsarPage } from "./pages/ComoUsarPage";
 import { CriarContaPage } from "./pages/CriarContaPage";
 import { DetailPage } from "./pages/DetailPage";
 import { EntrarPage } from "./pages/EntrarPage";
@@ -16,6 +17,9 @@ function resolve(pathname: string) {
   if (segments.length === 0) return <LandingPage />;
 
   if (segments.length === 1) {
+    // Como usar: aberta, e é a primeira coisa que alguém procura.
+    if (segments[0] === "como-usar") return <ComoUsarPage />;
+
     // A referência da API, aberta como a própria API. Não mora em `/api`: esse
     // caminho é do backend, e o nginx de produção redireciona `/api` para
     // `/api/`, que é a raiz da API de máquina.

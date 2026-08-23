@@ -6,6 +6,7 @@ import { CopyButton, ErrorLine } from "../components/elements";
 import { Plate } from "../components/Plate";
 import { ApiError, linkApi, redirectUrl } from "../lib/api";
 import { formatDateTime } from "../lib/format";
+import { Link } from "../lib/router";
 import { useIsMobile } from "../lib/useIsMobile";
 import type { LinkDetail } from "../types";
 
@@ -161,6 +162,24 @@ export function LandingPage() {
                 </div>
               </Plate>
             ))}
+          </div>
+
+          {/* Quem rolou a pagina inteira sem encurtar nada em geral esta com a
+              pergunta anterior: para que serve. */}
+          <div
+            className="row row-wrap"
+            style={{ marginTop: mobile ? 24 : 40, gap: 12, alignItems: "baseline" }}
+          >
+            <Link
+              className="btn btn-secondary"
+              to="/como-usar"
+              style={{ minHeight: mobile ? 44 : undefined }}
+            >
+              Como usar
+            </Link>
+            <span style={{ fontSize: 13, lineHeight: "20px", color: "var(--ink-meta)" }}>
+              seis passos, do primeiro link ao destino trocado depois
+            </span>
           </div>
         </section>
 
