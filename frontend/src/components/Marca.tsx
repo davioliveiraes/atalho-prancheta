@@ -1,12 +1,11 @@
 /**
  * A marca: dois elos de corrente.
  *
- * O mesmo desenho do favicon (`public/icone.svg`), aqui como componente para
- * acompanhar o tamanho do texto ao lado. Duas diferenças, porque aqui ele vive
- * dentro da folha: o contorno usa `currentColor`, herdando a tinta de quem o
- * contém como qualquer ícone da barra, e o corpo usa o acento do sistema no
- * lugar do ciano — a marca não introduz uma terceira cor na interface. O ciano
- * fica onde não há folha para respeitar: o favicon.
+ * O mesmo desenho e as mesmas cores do favicon (`public/icone.svg`), aqui como
+ * componente para acompanhar o tamanho do texto ao lado. A diferença é o
+ * contorno, que usa `currentColor` e herda a tinta de quem o contém, como
+ * qualquer ícone da barra — o favicon, sendo arquivo solto, repete o valor.
+ * O corpo é o acento do sistema nos dois: a marca não traz cor nova.
  */
 
 const ELO_A =
