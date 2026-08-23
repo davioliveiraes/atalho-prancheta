@@ -1,6 +1,7 @@
-import { Grid, Menu, Search, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "../lib/auth";
+import { Marca } from "./Marca";
 import { useMobileBar } from "../lib/mobileBar";
 import { Link, navigate, usePathname } from "../lib/router";
 import { useIsMobile } from "../lib/useIsMobile";
@@ -57,7 +58,7 @@ export function Nav() {
   return (
     <nav className="nav" aria-label="Principal">
       <Link className="nav-brand" to="/">
-        <Grid size={18} strokeWidth={1.5} aria-hidden="true" />
+        <Marca size={20} />
         Atalho Prancheta
       </Link>
 
