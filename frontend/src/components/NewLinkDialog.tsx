@@ -1,9 +1,11 @@
 import { QrCode } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { ApiError, linkApi } from "../lib/api";
+import { ApiError, linkApi, subdomainPreview } from "../lib/api";
+import { SLUG_HINT, SLUG_MAX_LENGTH } from "../lib/format";
+import { useSubdomainBase } from "../lib/siteConfig";
 import type { CreateLinkPayload, LinkDetail } from "../types";
 import { Dialog } from "./Dialog";
-import { ErrorLine } from "./elements";
+import { Affix, ErrorLine } from "./elements";
 
 /** Prefixo real do host: o que a API vai devolver em `short_url`. */
 function codePrefix() {
@@ -21,15 +23,21 @@ export function NewLinkDialog({
 }) {
   const [originalUrl, setOriginalUrl] = useState("");
   const [shortCode, setShortCode] = useState("");
+  const [subdomain, setSubdomain] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [maxClicks, setMaxClicks] = useState("");
   const [error, setError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // null enquanto carrega e quando a instalação não serve subdomínio: nos dois
+  // casos o campo não aparece, e é o lado seguro do engano.
+  const subdomainBase = useSubdomainBase();
+
   useEffect(() => {
     if (!open) return;
     setOriginalUrl("");
     setShortCode("");
+    setSubdomain("");
     setExpiresAt("");
     setMaxClicks("");
     setError(null);
@@ -42,6 +50,7 @@ export function NewLinkDialog({
 
     const payload: CreateLinkPayload = { original_url: originalUrl };
     if (shortCode) payload.short_code = shortCode;
+    if (subdomain) payload.subdomain = subdomain;
     if (expiresAt) payload.expires_at = new Date(expiresAt).toISOString();
     // Vazio ou 0 significam ilimitado: o campo não é enviado. Qualquer outro
     // valor vai para a API — inclusive negativo, para que o erro venha de lá
@@ -59,7 +68,7 @@ export function NewLinkDialog({
   }
 
   // Erro que não pertence a nenhum campo do formulário.
-  const FIELDS = ["original_url", "short_code", "expires_at", "max_clicks"];
+  const FIELDS = ["original_url", "short_code", "subdomain", "expires_at", "max_clicks"];
   const looseError =
     error && !Object.keys(error.fields).some((key) => FIELDS.includes(key)) ? error.message : null;
 
@@ -90,10 +99,14 @@ export function NewLinkDialog({
 
         <div className="field">
           <label htmlFor="f-url">URL original</label>
+          {/* Ver o campo equivalente da home: `url` recusaria endereço sem
+              esquema, que é a forma que se cola do navegador. */}
           <input
             id="f-url"
             className="input"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
             required
             placeholder="https://exemplo.com/pagina"
             value={originalUrl}
@@ -112,26 +125,12 @@ export function NewLinkDialog({
             </span>
           </label>
           <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-            <span
-              style={{
-                minHeight: 36,
-                display: "flex",
-                alignItems: "center",
-                padding: "0 10px",
-                border: "1px solid var(--color-divider)",
-                borderRight: 0,
-                fontSize: 14,
-                whiteSpace: "nowrap",
-                color: "var(--ink-meta)",
-              }}
-            >
-              {codePrefix()}
-            </span>
+            <Affix side="left">{codePrefix()}</Affix>
             <input
               id="f-code"
               className="input"
               type="text"
-              maxLength={10}
+              maxLength={SLUG_MAX_LENGTH}
               value={shortCode}
               aria-invalid={error?.field("short_code") ? true : undefined}
               style={error?.field("short_code") ? ERROR_BORDER : undefined}
@@ -139,8 +138,41 @@ export function NewLinkDialog({
             />
           </div>
           {error?.field("short_code") && <ErrorLine>{error.field("short_code")}</ErrorLine>}
-          <span className="field-hint">Somente letras e números, no mínimo 3 caracteres.</span>
+          <span className="field-hint">{SLUG_HINT}</span>
         </div>
+
+        {/* Só existe onde a instalação serve subdomínio — ver /api/config/. */}
+        {subdomainBase && (
+          <div className="field">
+            <label htmlFor="f-subdomain">
+              Subdomínio{" "}
+              <span style={{ color: "var(--ink-disabled)" }}>
+                — opcional, um segundo endereço para o mesmo link
+              </span>
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+              <input
+                id="f-subdomain"
+                className="input"
+                type="text"
+                maxLength={SLUG_MAX_LENGTH}
+                value={subdomain}
+                aria-invalid={error?.field("subdomain") ? true : undefined}
+                style={error?.field("subdomain") ? ERROR_BORDER : undefined}
+                onChange={(event) => setSubdomain(event.target.value)}
+              />
+              <Affix side="right">.{subdomainBase}</Affix>
+            </div>
+            {error?.field("subdomain") ? (
+              <ErrorLine>{error.field("subdomain")}</ErrorLine>
+            ) : (
+              <span className="field-hint">
+                {subdomainPreview(subdomainBase, subdomain.trim().toLowerCase()) ??
+                  `${SLUG_HINT} O link continua respondendo no endereço de cima.`}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-2" style={{ gap: 16 }}>
           <div className="field">

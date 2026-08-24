@@ -78,6 +78,22 @@ export function linkState(
   return expired ? "expired" : "max_clicks";
 }
 
+/**
+ * As regras do apelido, escritas para quem digita.
+ *
+ * Espelham `backend/shortener/slugs.py` — o `maxLength` do campo só evita que a
+ * pessoa digite além do limite e receba um erro no fim; quem valida de verdade
+ * é o backend, e é a mensagem dele que a tela mostra.
+ */
+export const SLUG_MAX_LENGTH = 32;
+
+export const SLUG_HINT = "Letras sem acento, números e hífen, de 3 a 32 caracteres.";
+
+/** `https://loja.atalho.app` → `loja.atalho.app`, para caber numa célula de tabela. */
+export function hostOf(url: string) {
+  return url.replace(/^https?:\/\//, "");
+}
+
 export const STATE_LABEL: Record<LinkState, string> = {
   active: "Ativo",
   inactive: "Inativo",

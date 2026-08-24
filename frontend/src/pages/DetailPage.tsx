@@ -2,10 +2,11 @@ import { Copy, Download, Power, Trash2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import { Dialog } from "../components/Dialog";
 import { Plate } from "../components/Plate";
-import { ErrorLine, StateTag } from "../components/elements";
+import { Affix, CopyButton, ErrorLine, StateTag } from "../components/elements";
 import { ApiError, linkApi } from "../lib/api";
 import { useSession } from "../lib/auth";
 import {
+  SLUG_MAX_LENGTH,
   STATE_LABEL,
   clicksByDay,
   formatDate,
@@ -17,6 +18,7 @@ import {
   toDateTimeLocal,
 } from "../lib/format";
 import { Link, navigate } from "../lib/router";
+import { useSubdomainBase } from "../lib/siteConfig";
 import type { LinkDetail, LinkStatisticsResponse } from "../types";
 
 const WINDOWS = [7, 14, 30] as const;
@@ -129,6 +131,28 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
           <h2 className="break" style={{ fontSize: 44, lineHeight: "46px" }}>
             {detail.short_url}
           </h2>
+
+          {/* O segundo endereço, quando o link tem subdomínio. Os dois levam ao
+              mesmo destino e contam o mesmo clique. */}
+          {detail.subdomain_url && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, lineHeight: "20px", color: "var(--ink-meta)" }}>
+                Também em
+              </span>
+              <span
+                className="break"
+                style={{ fontSize: 15, lineHeight: "22px", color: "var(--ink-secondary)" }}
+              >
+                {detail.subdomain_url}
+              </span>
+              <CopyButton
+                value={detail.subdomain_url}
+                ariaLabel="Copiar endereço de subdomínio"
+                height={30}
+              />
+            </div>
+          )}
+
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             <StateTag state={state} />
             <span
@@ -376,6 +400,9 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
                   {detail.short_code}{" "}
                   <span style={{ fontSize: 12, color: "var(--ink-disabled)" }}>(imutável)</span>
                 </Term>
+                <Term label="Subdomínio">
+                  {detail.subdomain ?? "—"}
+                </Term>
                 <Term label="Status">{STATE_LABEL[state]}</Term>
                 <Term label="Expira em">{formatDateTime(detail.expires_at)}</Term>
                 <Term label="Máx. únicos">
@@ -540,14 +567,18 @@ function EditDialog({
   onSaved: () => Promise<void>;
 }) {
   const [originalUrl, setOriginalUrl] = useState(link.original_url);
+  const [subdomain, setSubdomain] = useState(link.subdomain ?? "");
   const [expiresAt, setExpiresAt] = useState(toDateTimeLocal(link.expires_at));
   const [maxClicks, setMaxClicks] = useState(String(link.max_clicks || ""));
   const [error, setError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const subdomainBase = useSubdomainBase();
+
   useEffect(() => {
     if (!open) return;
     setOriginalUrl(link.original_url);
+    setSubdomain(link.subdomain ?? "");
     setExpiresAt(toDateTimeLocal(link.expires_at));
     setMaxClicks(String(link.max_clicks || ""));
     setError(null);
@@ -560,6 +591,10 @@ function EditDialog({
     try {
       await linkApi.update(link.short_code, {
         original_url: originalUrl,
+        // String vazia remove o subdomínio. Só é enviado onde a instalação
+        // serve subdomínio — do contrário o campo nem existe na tela, e mandar
+        // vazio apagaria um subdomínio configurado por fora.
+        ...(subdomainBase ? { subdomain } : {}),
         expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
         max_clicks: maxClicks ? Number(maxClicks) : 0,
       });
@@ -599,7 +634,9 @@ function EditDialog({
           <input
             id="edit-url"
             className="input"
-            type="url"
+            type="text"
+            inputMode="url"
+            autoComplete="url"
             required
             value={originalUrl}
             aria-invalid={error?.field("original_url") ? true : undefined}
@@ -607,6 +644,32 @@ function EditDialog({
           />
           {error?.field("original_url") && <ErrorLine>{error.field("original_url")}</ErrorLine>}
         </div>
+
+        {subdomainBase && (
+          <div className="field">
+            <label htmlFor="edit-subdomain">Subdomínio</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+              <input
+                id="edit-subdomain"
+                className="input"
+                type="text"
+                maxLength={SLUG_MAX_LENGTH}
+                placeholder="Sem subdomínio"
+                value={subdomain}
+                aria-invalid={error?.field("subdomain") ? true : undefined}
+                onChange={(event) => setSubdomain(event.target.value)}
+              />
+              <Affix side="right">.{subdomainBase}</Affix>
+            </div>
+            {error?.field("subdomain") ? (
+              <ErrorLine>{error.field("subdomain")}</ErrorLine>
+            ) : (
+              <span className="field-hint">
+                Vazio remove o subdomínio; o endereço de código continua valendo.
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="field">
           <label htmlFor="edit-expires">Expira em</label>

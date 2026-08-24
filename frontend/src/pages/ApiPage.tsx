@@ -92,7 +92,7 @@ const GROUPS: Group[] = [
       {
         method: "POST",
         path: "/api/urls/",
-        text: "Cria o link. Campos: original_url e, opcionais, short_code, expires_at e max_clicks.",
+        text: "Cria o link. Campos: original_url e, opcionais, short_code, subdomain, expires_at e max_clicks.",
         access: "aberto",
       },
       {
@@ -104,7 +104,7 @@ const GROUPS: Group[] = [
       {
         method: "PATCH",
         path: "/api/urls/{codigo}/",
-        text: "Altera destino, estado, expiração e limite. Código curto e contadores de clique não se alteram por aqui.",
+        text: "Altera destino, subdomínio, estado, expiração e limite. Código curto e contadores de clique não se alteram por aqui.",
         access: "dono",
       },
       {
@@ -146,8 +146,8 @@ const GROUPS: Group[] = [
     ],
   },
   {
-    title: "Saúde",
-    cell: "1 rota",
+    title: "Serviço",
+    cell: "2 rotas",
     routes: [
       {
         method: "GET",
@@ -155,17 +155,29 @@ const GROUPS: Group[] = [
         text: "Responde 200 com o banco no ar e 503 sem ele. É o que o orquestrador consulta.",
         access: "publico",
       },
+      {
+        method: "GET",
+        path: "/api/config/",
+        text: "shortlink_base_domain: o domínio dos links por subdomínio, ou null quando a instalação não serve subdomínio.",
+        access: "publico",
+      },
     ],
   },
   {
     title: "Redirecionamento",
-    cell: "1 rota",
+    cell: "2 rotas",
     note: "É o endereço que se divulga, na raiz do domínio. Inativo, expirado ou no teto de cliques únicos, ele responde 403 e não revela o destino.",
     routes: [
       {
         method: "GET",
         path: "/{codigo}",
-        text: "Conta o clique — total sempre, único uma vez por IP — e redireciona para o destino atual.",
+        text: "Conta o clique — total sempre, único uma vez por IP — e redireciona para o destino atual. O desvio é temporário e sem cache: trocar o destino vale já no próximo acesso.",
+        access: "publico",
+      },
+      {
+        method: "GET",
+        path: "{subdominio}.{dominio}",
+        text: "O mesmo link pelo subdomínio, quando ele tem um. Mesmo destino, mesma contagem de cliques.",
         access: "publico",
       },
     ],

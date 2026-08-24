@@ -1,46 +1,80 @@
-import { ExternalLink, QrCode } from "lucide-react";
+import { ExternalLink, QrCode, SlidersHorizontal } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { NewLinkDialog } from "../components/NewLinkDialog";
 import { QrDialog } from "../components/QrDialog";
-import { CopyButton, ErrorLine } from "../components/elements";
+import { Affix, CopyButton, ErrorLine } from "../components/elements";
 import { Plate } from "../components/Plate";
-import { ApiError, linkApi, redirectUrl } from "../lib/api";
-import { formatDateTime } from "../lib/format";
+import { ApiError, linkApi, redirectUrl, subdomainPreview } from "../lib/api";
+import { useSession } from "../lib/auth";
+import { SLUG_HINT, SLUG_MAX_LENGTH, formatDateTime } from "../lib/format";
 import { Link } from "../lib/router";
+import { useSubdomainBase } from "../lib/siteConfig";
 import { useIsMobile } from "../lib/useIsMobile";
-import type { LinkDetail } from "../types";
+import type { CreateLinkPayload, LinkDetail } from "../types";
 
-const MEASURES = [
-  {
-    title: "Totais e únicos",
-    text: "Cada acesso grava IP, user agent, referência e horário. O clique único é contado uma vez por IP.",
-  },
-  {
-    title: "Expiração e limite",
-    text: "Defina data de expiração ou máximo de cliques únicos. Atingido o teto, o link responde 403 em vez de redirecionar.",
-  },
-  {
-    title: "QR Code automático",
-    text: "Todo link nasce com um PNG gerado no servidor, pronto para baixar e imprimir.",
-  },
-];
+/**
+ * A faixa da segunda tela: seis fichas, duas fileiras de três.
+ *
+ * Cada uma descreve algo que a aplicação faz de verdade — nada de promessa de
+ * roadmap. É função, e não constante, porque a ficha do endereço muda de texto
+ * onde o subdomínio está ligado.
+ */
+function features(subdomainBase: string | null) {
+  return [
+    {
+      title: "Totais e únicos",
+      text: "Cada acesso grava IP, user agent, referência e horário. O clique único é contado uma vez por IP.",
+    },
+    {
+      title: "Destino atualizável",
+      text: "Trocar o destino não mexe no endereço divulgado. O desvio é temporário e vai sem cache: o próximo acesso já cai no lugar novo, inclusive o de quem já clicou antes.",
+    },
+    {
+      title: "Endereço escolhido",
+      text: subdomainBase
+        ? "Em vez do código sorteado, escolha o seu — letras sem acento, números e hífen. E o mesmo link ainda pode ganhar um subdomínio como segundo endereço."
+        : "Em vez do código sorteado de seis caracteres, escolha o seu: letras sem acento, números e hífen, de 3 a 32 caracteres.",
+    },
+    {
+      title: "Expiração e limite",
+      text: "Defina data de expiração ou máximo de cliques únicos. Atingido o teto, o link responde 403 sem revelar para onde apontava.",
+    },
+    {
+      title: "QR Code automático",
+      text: "Todo link nasce com um PNG gerado no servidor. Como ele aponta para o endereço curto, o papel impresso continua valendo depois de trocar o destino.",
+    },
+    {
+      title: "Painel por conta",
+      text: "Encurtar não exige conta. Com conta, o link entra num painel com cliques por dia, acessos recentes, busca e filtros — e cada painel enxerga apenas os próprios links.",
+    },
+  ];
+}
 
 export function LandingPage() {
   const [url, setUrl] = useState("");
+  const [subdomain, setSubdomain] = useState("");
   const [created, setCreated] = useState<LinkDetail | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
   const [advanced, setAdvanced] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const mobile = useIsMobile();
+  const session = useSession();
+
+  // null enquanto carrega e quando a instalação não serve subdomínio: nos dois
+  // casos o campo não aparece, e o encurtador segue sendo de um campo só.
+  const subdomainBase = useSubdomainBase();
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      setCreated(await linkApi.create({ original_url: url }));
+      const payload: CreateLinkPayload = { original_url: url };
+      if (subdomain) payload.subdomain = subdomain;
+      setCreated(await linkApi.create(payload));
       setUrl("");
+      setSubdomain("");
     } catch (cause) {
       setError(cause instanceof ApiError ? cause : new ApiError("Falha de rede.", 0));
       setCreated(null);
@@ -49,7 +83,16 @@ export function LandingPage() {
     }
   }
 
-  const urlError = error?.field("original_url") ?? (error ? error.message : undefined);
+  // Erro que não pertence a nenhum campo — recusa por excesso de criações, por
+  // exemplo — continua aparecendo sob a URL, que é o campo principal. O do
+  // subdomínio vai para o subdomínio, e não para os dois lugares.
+  const FIELDS = ["original_url", "subdomain"];
+  const looseError =
+    error && !Object.keys(error.fields).some((key) => FIELDS.includes(key))
+      ? error.message
+      : undefined;
+  const urlError = error?.field("original_url") ?? looseError;
+  const subdomainError = error?.field("subdomain");
 
   return (
     <>
@@ -78,65 +121,102 @@ export function LandingPage() {
                 : "Cole a URL, receba um código curto e um QR Code. A contagem separa cliques totais de únicos por IP, e você pode fechar o link por data de expiração ou por limite de acessos."}
             </p>
 
-            <form
-              onSubmit={submit}
-              className={mobile ? "stack-mobile" : undefined}
-              style={{ display: "flex", gap: 10, alignItems: "stretch", maxWidth: 640 }}
-            >
-              <label className="sr-only" htmlFor="original_url">
-                URL de destino
-              </label>
-              <input
-                id="original_url"
-                className="input"
-                type="url"
-                required
-                placeholder="https://exemplo.com/pagina"
-                value={url}
-                aria-invalid={urlError ? true : undefined}
-                style={{ flex: 1, minHeight: mobile ? 48 : 44, fontSize: 15 }}
-                onChange={(event) => setUrl(event.target.value)}
-              />
-              <button
-                className="btn btn-primary"
-                type="submit"
-                disabled={busy || !url}
-                style={{ minHeight: mobile ? 48 : 44, paddingInline: 22 }}
+            <form onSubmit={submit} className="stack" style={{ gap: 12, maxWidth: 640 }}>
+              <div
+                className={mobile ? "stack-mobile" : undefined}
+                style={{ display: "flex", gap: 10, alignItems: "stretch" }}
               >
-                {busy ? "Encurtando…" : "Encurtar"}
-              </button>
+                <label className="sr-only" htmlFor="original_url">
+                  URL de destino
+                </label>
+                {/* Texto, e não `url`: o navegador recusaria
+                    `chat.whatsapp.com/L1k8` por falta de esquema, e é justamente
+                    a forma que se copia da barra de endereço. Quem completa o
+                    `https://` e valida o resto é o backend. */}
+                <input
+                  id="original_url"
+                  className="input"
+                  type="text"
+                  inputMode="url"
+                  autoComplete="url"
+                  required
+                  placeholder="https://exemplo.com/pagina"
+                  value={url}
+                  aria-invalid={urlError ? true : undefined}
+                  style={{ flex: 1, minHeight: mobile ? 48 : 44, fontSize: 15 }}
+                  onChange={(event) => setUrl(event.target.value)}
+                />
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  disabled={busy || !url}
+                  style={{ minHeight: mobile ? 48 : 44, paddingInline: 22 }}
+                >
+                  {busy ? "Encurtando…" : "Encurtar"}
+                </button>
+              </div>
+
+              {/* Só existe onde a instalação serve subdomínio — ver /api/config/.
+                  Fica abaixo da linha principal, e não dentro dela: quem veio
+                  colar uma URL e apertar Enter continua com um campo só. */}
+              {subdomainBase && (
+                <div className="field">
+                  <label htmlFor="landing-subdomain">
+                    Subdomínio{" "}
+                    <span style={{ color: "var(--ink-disabled)" }}>
+                      — opcional, um segundo endereço para o mesmo link
+                    </span>
+                  </label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                    <input
+                      id="landing-subdomain"
+                      className="input"
+                      type="text"
+                      maxLength={SLUG_MAX_LENGTH}
+                      value={subdomain}
+                      aria-invalid={subdomainError ? true : undefined}
+                      style={{ minHeight: mobile ? 48 : 44 }}
+                      onChange={(event) => setSubdomain(event.target.value)}
+                    />
+                    <Affix side="right">.{subdomainBase}</Affix>
+                  </div>
+                  {subdomainError ? (
+                    <ErrorLine>{subdomainError}</ErrorLine>
+                  ) : (
+                    <span className="field-hint">
+                      {subdomainPreview(subdomainBase, subdomain.trim().toLowerCase()) ??
+                        (session
+                          ? SLUG_HINT
+                          : // Link criado sem conta não pertence a ninguém, e por
+                            // isso ninguém o edita depois. O nome escolhido aqui
+                            // fica como está.
+                            `${SLUG_HINT} Sem conta, o nome não pode ser trocado depois.`)}
+                    </span>
+                  )}
+                </div>
+              )}
             </form>
 
             {urlError && <ErrorLine>{urlError}</ErrorLine>}
 
-            <p
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 12,
-                fontSize: 13,
-                lineHeight: "20px",
-                color: "var(--ink-meta)",
-              }}
-            >
+            {/* Botão com moldura, e não texto solto numa linha de 13px: é aqui
+                que mora a personalização do link, e um `btn-ghost` no meio de
+                uma frase cinza passava por legenda. */}
+            <div className="stack" style={{ gap: 8, alignItems: "flex-start" }}>
               <button
                 type="button"
-                className="btn btn-ghost"
-                style={{
-                  // padding de 12px é a área de toque da 1h; o minHeight garante
-                  // os 44px do checklist, que só o padding não alcança.
-                  height: "auto",
-                  minHeight: mobile ? 44 : undefined,
-                  padding: mobile ? "12px 0" : 0,
-                  fontSize: 13,
-                  color: "var(--color-accent-700)",
-                }}
+                className="btn btn-secondary"
+                style={{ minHeight: mobile ? 44 : undefined }}
                 onClick={() => setAdvanced(true)}
               >
-                Opções avançadas
+                <SlidersHorizontal size={15} strokeWidth={1.5} aria-hidden="true" />
+                Personalizar o link
               </button>
-              <span>código personalizado · expiração · limite de cliques</span>
-            </p>
+              <span style={{ fontSize: 13, lineHeight: "20px", color: "var(--ink-meta)" }}>
+                código personalizado{subdomainBase ? " · subdomínio" : ""} · expiração · limite de
+                cliques
+              </span>
+            </div>
           </div>
 
           <ResultPlate link={created} onQr={() => setQrOpen(true)} mobile={mobile} />
@@ -144,15 +224,15 @@ export function LandingPage() {
       </div>
 
       <div className="screen">
-        {/* Faixa de medições — segunda tela cheia, com o rodapé no pé dela */}
+        {/* Faixa de recursos — segunda tela cheia, com o rodapé no pé dela */}
         <section
           className="shell screen-body screen-spread"
           style={{ paddingTop: mobile ? 24 : 56, paddingBottom: mobile ? 40 : 56 }}
         >
-          <p className="kicker">02 · O que a API mede</p>
+          <p className="kicker">02 · O que ela faz</p>
           <hr className="rule" style={{ marginTop: 12, marginBottom: 40 }} />
           <div className="grid grid-3 screen-middle" style={{ gap: mobile ? 24 : 40 }}>
-            {MEASURES.map((item) => (
+            {features(subdomainBase).map((item) => (
               <Plate as="article" key={item.title}>
                 <div className="stack" style={{ padding: 24, gap: 12 }}>
                   <h3 style={{ fontSize: 22, lineHeight: "24px" }}>{item.title}</h3>
@@ -264,6 +344,40 @@ function ResultPlate({
           </span>
         </div>
 
+        {/* O segundo endereço, quando o link nasceu com subdomínio. Só aparece
+            depois de criado — antes disso não há endereço nenhum a mostrar. */}
+        {link?.subdomain_url && (
+          <div className="stack" style={{ gap: 6 }}>
+            <span
+              style={{
+                fontFamily: "var(--font-heading)",
+                fontWeight: 600,
+                fontSize: 12,
+                letterSpacing: ".06em",
+                textTransform: "uppercase",
+                color: "var(--ink-small)",
+              }}
+            >
+              Também em
+            </span>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}
+            >
+              <span
+                className="break"
+                style={{ fontSize: 15, lineHeight: "22px", color: "var(--ink-secondary)" }}
+              >
+                {link.subdomain_url}
+              </span>
+              <CopyButton
+                value={link.subdomain_url}
+                ariaLabel="Copiar endereço de subdomínio"
+                height={mobile ? 44 : 30}
+              />
+            </div>
+          </div>
+        )}
+
         {/* No mobile só as duas ações diretas, cada uma com 44px e metade da largura. */}
         <div
           className={mobile ? "split-mobile" : undefined}
@@ -310,6 +424,7 @@ function ResultPlate({
             <span className="break">{link ? link.original_url : "—"}</span>
           </Row>
           <Row term="Código">{link ? link.short_code : "—"}</Row>
+          <Row term="Subdomínio">{link?.subdomain ?? "—"}</Row>
           <Row term="Expira em">{link ? formatDateTime(link.expires_at) : "—"}</Row>
           <Row term="Limite de cliques">
             {link ? (link.max_clicks ? String(link.max_clicks) : "Ilimitado") : "Ilimitado"}

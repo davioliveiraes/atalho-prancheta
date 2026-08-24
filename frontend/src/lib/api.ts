@@ -181,6 +181,19 @@ export interface LinkSummary {
   down: number;
 }
 
+/** Corpo de /api/config/ — o que a interface precisa saber da instalação. */
+export interface SiteConfig {
+  /** `atalho.app` quando o link por subdomínio está ligado; null quando não. */
+  shortlink_base_domain: string | null;
+}
+
+export const configApi = {
+  /** GET /api/config/ — público, e é o que decide se a tela oferece subdomínio. */
+  get(): Promise<SiteConfig> {
+    return request<SiteConfig>("/config/", { anonymous: true });
+  },
+};
+
 export const authApi = {
   /** POST /api/auth/register/ — 201 já devolve o par de tokens */
   register(payload: RegisterPayload): Promise<AuthSession> {
@@ -280,4 +293,16 @@ export const linkApi = {
  */
 export function redirectUrl(shortCode: string) {
   return `${window.location.origin}/${shortCode}`;
+}
+
+/**
+ * O segundo endereço, quando o link tem subdomínio: `loja-natal.atalho.app`.
+ *
+ * O backend já devolve pronto em `subdomain_url`; esta função existe para as
+ * telas que montam o endereço antes de salvar — a pré-visualização do
+ * formulário, que ainda não tem resposta nenhuma da API.
+ */
+export function subdomainPreview(baseDomain: string | null, subdomain: string) {
+  if (!baseDomain || !subdomain) return null;
+  return `${window.location.protocol}//${subdomain}.${baseDomain}`;
 }

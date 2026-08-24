@@ -30,8 +30,12 @@ export interface LinkStatistics {
 export interface LinkListItem {
   id: number;
   short_code: string;
+  /** Rotulo opcional que serve o mesmo link em {rotulo}.{dominio} */
+  subdomain: string | null;
   original_url: string;
   short_url: string;
+  /** `https://loja-natal.atalho.app`, ou null sem subdominio ou sem dominio configurado */
+  subdomain_url: string | null;
   is_active: boolean;
   expires_at: string | null;
   max_clicks: number;
@@ -81,6 +85,7 @@ export interface Paginated<T> {
 export interface CreateLinkPayload {
   original_url: string;
   short_code?: string;
+  subdomain?: string | null;
   expires_at?: string | null;
   max_clicks?: number | null;
 }
@@ -88,6 +93,8 @@ export interface CreateLinkPayload {
 /** Campos aceitos por ShortenedURLUpdateSerializer */
 export interface UpdateLinkPayload {
   original_url?: string;
+  /** String vazia remove o subdominio do link */
+  subdomain?: string | null;
   is_active?: boolean;
   expires_at?: string | null;
   max_clicks?: number | null;

@@ -5,7 +5,7 @@ import { QrDialog } from "../components/QrDialog";
 import { StateTag } from "../components/elements";
 import { Plate } from "../components/Plate";
 import { ApiError, type LinkSummary, linkApi } from "../lib/api";
-import { formatDateShort, formatNumber, linkState } from "../lib/format";
+import { formatDateShort, formatNumber, hostOf, linkState } from "../lib/format";
 import { Link, navigate } from "../lib/router";
 import type { LinkListItem } from "../types";
 
@@ -295,6 +295,21 @@ function Card({
           </Link>
           <StateTag state={state} />
         </div>
+
+        {/* O segundo endereço do link, quando existe — o mesmo link, não outro. */}
+        {link.subdomain_url && (
+          <p
+            className="break"
+            style={{
+              margin: 0,
+              fontSize: 12,
+              lineHeight: "18px",
+              color: faded ? "var(--ink-disabled)" : "var(--ink-meta)",
+            }}
+          >
+            {hostOf(link.subdomain_url)}
+          </p>
+        )}
 
         <p
           className="break"

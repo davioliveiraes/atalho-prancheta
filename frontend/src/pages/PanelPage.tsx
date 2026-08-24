@@ -5,7 +5,7 @@ import { QrDialog } from "../components/QrDialog";
 import { StateTag } from "../components/elements";
 import { Plate } from "../components/Plate";
 import { ApiError, linkApi } from "../lib/api";
-import { formatDateShort, formatNumber, linkState } from "../lib/format";
+import { formatDateShort, formatNumber, hostOf, linkState } from "../lib/format";
 import { useRegisterMobileBar } from "../lib/mobileBar";
 import { useIsMobile } from "../lib/useIsMobile";
 import { Link, navigate } from "../lib/router";
@@ -491,6 +491,17 @@ function Row({
         >
           {item.short_code}
         </Link>
+        {/* O segundo endereço do link, quando existe. Fica sob o código porque
+            é o mesmo link, e não outro. */}
+        {item.subdomain_url && (
+          <div
+            className="truncate"
+            title={item.subdomain_url}
+            style={{ fontSize: 12, lineHeight: "18px", color: "var(--ink-meta)" }}
+          >
+            {hostOf(item.subdomain_url)}
+          </div>
+        )}
       </td>
       <td style={{ color: "var(--ink-secondary)" }}>
         <span className="truncate" title={item.original_url}>
