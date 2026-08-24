@@ -524,7 +524,7 @@
     <hr class="rule">
     <h1>Roteiro de demonstração</h1>
     <p class="lede">
-      Oito passos, uns cinco minutos. Cada um traz o que fazer e a
+      Nove passos, uns seis minutos. Cada um traz o que fazer e a
       <strong>finalidade</strong> — a frase que explica para que aquilo existe, que é
       o que se diz em voz alta enquanto a tela aparece.
     </p>
@@ -553,7 +553,7 @@
   </header>
 
   <div class="progress">
-    <b id="feitos">0</b> <span>de <span id="total">8</span> passos</span>
+    <b id="feitos">0</b> <span>de <span id="total">9</span> passos</span>
     <button type="button" id="limpar">Recomeçar</button>
   </div>
 
@@ -568,8 +568,13 @@
       <div class="plate-body">
         <p>
           Cole uma URL longa e clique <strong>Encurtar</strong>. Aparecem o link curto,
-          o QR Code e o botão de copiar. Abra <strong>Opções avançadas</strong> para
-          mostrar código personalizado, expiração e limite de cliques.
+          o QR Code e o botão de copiar. O botão <strong>Personalizar o link</strong>
+          abre código escolhido, subdomínio, expiração e limite de cliques.
+        </p>
+        <p class="small">
+          Cole o endereço <em>sem</em> o <code>https://</code> — como se copia da barra
+          do navegador. É aceito e completado no servidor, junto com os parâmetros de
+          campanha, que atravessam intactos.
         </p>
         <p class="small">
           Rolando até o pé desta tela está o botão <strong>Como usar</strong> — vale
@@ -678,13 +683,24 @@
         <p>
           Clique num link: cliques por dia, acessos recentes, QR Code e estado. Agora
           <strong>Editar link</strong> e troque o destino. Volte ao link curto e abra —
-          ele vai para o endereço novo.
+          <em>sem limpar o cache, sem aba anônima</em> — e ele vai para o endereço novo.
+        </p>
+        <p class="small">
+          Baixe o QR Code <em>antes</em> de trocar e abra o PNG depois: o papel impresso
+          na semana passada leva ao destino de agora. É a demonstração inteira num
+          arquivo só.
         </p>
         <div class="why">
           <span>Finalidade — o ponto central</span>
           <p>
             O código divulgado nunca muda. Cartaz impresso, QR na embalagem, link no
             perfil: o destino por trás pode ser corrigido depois, sem reimprimir nada.
+          </p>
+          <p>
+            Por isso o desvio é temporário e vai com <code>no-store</code>. Um 301, que é
+            o que muitos encurtadores devolvem, ficaria guardado no navegador de quem já
+            clicou uma vez — e essa pessoa continuaria caindo no destino velho sem nem
+            consultar o servidor.
           </p>
         </div>
       </div>
@@ -693,6 +709,36 @@
     <section class="plate">
       <div class="plate-head">
         <label class="plate-num"><input type="checkbox">7</label>
+        <h2 class="plate-title">Um segundo endereço</h2>
+        <div class="plate-where">{apelido}.{dominio}</div>
+      </div>
+      <div class="plate-body">
+        <p>
+          <strong>Editar link</strong> → preencha <strong>Subdomínio</strong> com
+          <code>promo</code>. O mesmo link passa a responder também em
+          <span class="path">promo.{dominio}</span>, com o endereço de código valendo do
+          mesmo jeito. Abra os dois: mesmo destino, e o clique cai na mesma contagem.
+        </p>
+        <p class="small">
+          Depende de <code>SHORTLINK_BASE_DOMAIN</code> preenchido — vazio, o campo nem
+          aparece na tela. Em desenvolvimento vale <code>localhost:5173</code>, que o
+          navegador resolve sozinho. Em produção exige DNS e certificado curinga, e o
+          passo a passo está na seção 10 do <code>DEPLOY.md</code>.
+        </p>
+        <div class="why">
+          <span>Finalidade</span>
+          <p>
+            O endereço que se fala em voz alta. Um subdomínio não tem barra para soletrar
+            e cabe num cartaz sem competir com o resto do texto — e continua sendo o
+            mesmo link, com o mesmo destino trocável.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="plate">
+      <div class="plate-head">
+        <label class="plate-num"><input type="checkbox">8</label>
         <h2 class="plate-title">Tirar do ar</h2>
         <div class="plate-where">/links/{codigo}</div>
       </div>
@@ -713,7 +759,7 @@
 
     <section class="plate">
       <div class="plate-head">
-        <label class="plate-num"><input type="checkbox">8</label>
+        <label class="plate-num"><input type="checkbox">9</label>
         <h2 class="plate-title">Duas contas</h2>
         <div class="plate-where">janela anônima</div>
       </div>
@@ -749,7 +795,7 @@
         <tbody>
           <tr>
             <td><span class="path">/referencia</span></td>
-            <td>as 17 rotas documentadas dentro da própria interface, cada uma com o acesso que exige</td>
+            <td>as 19 rotas documentadas dentro da própria interface, cada uma com o acesso que exige</td>
           </tr>
           <tr>
             <td><span class="path">:8000/admin/</span></td>
@@ -761,7 +807,7 @@
           </tr>
           <tr>
             <td>terminal</td>
-            <td><code>docker compose run --rm backend python manage.py test</code> — 173 testes</td>
+            <td><code>docker compose run --rm backend python manage.py test</code> — 248 testes</td>
           </tr>
         </tbody>
       </table>
@@ -769,7 +815,15 @@
     <p class="small">E a API direto, se for o caso:</p>
     <div class="cmd">curl -X POST http://localhost:8000/api/urls/ \
   -H "Content-Type: application/json" \
-  -d '{"original_url":"https://exemplo.com"}'</div>
+  -d '{"original_url":"exemplo.com/promo?utm_source=cartaz","short_code":"promo"}'</div>
+    <p class="small">
+      Sem esquema na entrada e com <code>https://</code> na saída, com o parâmetro de
+      campanha intacto. Os cabeçalhos do desvio contam o resto da história:
+    </p>
+    <div class="cmd">curl -sI http://localhost:8000/promo</div>
+    <p class="small">
+      <code>302</code> e <code>cache-control: no-store</code> — nunca 301.
+    </p>
   </section>
 
   <section class="section">
@@ -782,6 +836,13 @@
       reinicie o backend.
     </p>
     <p>
+      <strong>O subdomínio é opcional e vem desligado.</strong> Sem
+      <code>SHORTLINK_BASE_DOMAIN</code> no <code>.env</code>, o passo 7 não tem campo
+      para preencher — e a tela esconde o campo de propósito, para ninguém escolher um
+      endereço que o servidor não atende. Para ensaiar local, ponha
+      <code>localhost:5173</code> e reinicie o backend.
+    </p>
+    <p>
       <strong>Nada está publicado ainda.</strong> Tudo aqui é local. Na VPS os endereços
       viram o seu domínio, e o passo a passo está no <code>DEPLOY.md</code> — falta
       apontar o domínio e emitir o certificado.
@@ -790,7 +851,7 @@
 
   <footer>
     <p>Atalho Prancheta · links permanentes com destino atualizável</p>
-    <p>Django REST Framework · React · PostgreSQL · Redis · 173 testes</p>
+    <p>Django REST Framework · React · PostgreSQL · Redis · 248 testes</p>
   </footer>
 </main>
 

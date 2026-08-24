@@ -290,6 +290,89 @@ docker run --rm -v atalho-prancheta_media_volume:/media -v /var/backups/atalho-p
 
 ---
 
+## 10. Link por subdomínio (opcional)
+
+Além de `seudominio.com.br/loja-natal`, o mesmo link pode responder em
+`loja-natal.seudominio.com.br`. É opcional: sem `SHORTLINK_BASE_DOMAIN`
+preenchido, nada disso liga e o link de caminho continua igual.
+
+São três peças, e as três precisam existir — se faltar uma, o subdomínio não
+chega ao Django.
+
+### 10.1 DNS curinga
+
+No painel do domínio, um registro `A` curinga apontando para o mesmo IP da VPS:
+
+| Tipo | Nome | Valor        |
+| ---- | ---- | ------------ |
+| A    | `*`  | IP da VPS    |
+
+Confira antes de seguir — a propagação leva alguns minutos:
+
+```bash
+dig +short qualquercoisa.seudominio.com.br
+```
+
+### 10.2 Certificado curinga
+
+Um certificado para `*.seudominio.com.br` **só sai pelo desafio DNS-01**: o
+Let's Encrypt não emite curinga pelo desafio de porta 80 que a seção 4 usa. O
+DNS-01 pede um registro `TXT` temporário, e o certbot dita qual:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm \
+  --entrypoint "certbot certonly --manual --preferred-challenges dns \
+  --agree-tos --no-eff-email -m voce@exemplo.com \
+  -d seudominio.com.br -d *.seudominio.com.br" certbot
+```
+
+O comando para e mostra o valor do `TXT` em `_acme-challenge.seudominio.com.br`.
+Crie o registro no painel do domínio, espere propagar (`dig +short TXT
+_acme-challenge.seudominio.com.br`) e só então dê Enter.
+
+> **`--manual` não renova sozinho.** O `certbot renew` da seção 7 vai falhar
+> nesse certificado e você repete este comando a cada 90 dias, ou troca por um
+> plugin de DNS do seu provedor (`--dns-cloudflare` e afins), que automatiza o
+> `TXT`. Enquanto o certificado curinga estiver vencido, o domínio principal
+> continua intacto: quem quebra é só o acesso por subdomínio.
+
+### 10.3 Ligar na aplicação
+
+No `.env` da VPS:
+
+```bash
+SHORTLINK_BASE_DOMAIN=seudominio.com.br
+```
+
+O Django acrescenta `.seudominio.com.br` ao `ALLOWED_HOSTS` sozinho a partir
+daí — sem isso, todo acesso por subdomínio morreria em `DisallowedHost` antes
+de chegar ao middleware. O `server_name *.${DOMAIN}` já está no
+[`deploy/nginx/default.conf.template`](deploy/nginx/default.conf.template).
+
+Recarregue:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### 10.4 Conferir
+
+```bash
+# Um link com subdomínio `loja-natal` responde com 302 e o destino no Location
+curl -sI https://loja-natal.seudominio.com.br | head -3
+
+# Um rótulo livre responde 404, e não o site
+curl -so /dev/null -w '%{http_code}\n' https://naoexiste.seudominio.com.br
+
+# O domínio principal e o www seguem servindo a interface
+curl -so /dev/null -w '%{http_code}\n' https://seudominio.com.br
+```
+
+O `Cache-Control` da resposta traz `no-store`: é o que garante que trocar o
+destino de um link tenha efeito no próximo acesso, inclusive para quem já
+clicou antes.
+---
+
 ## Notas
 
 **Desenvolvimento continua igual.** O `docker-compose.yml` da raiz é o de

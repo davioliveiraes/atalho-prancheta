@@ -804,7 +804,7 @@ POST {{api_url}}/urls/
 Response:
 {
     "short_code": [
-        "Codigo curto deve conter apenas letras e numeros."
+        "Use apenas letras sem acento, numeros e hifen, sem comecar nem terminar em hifen."
     ]
 }
 ```

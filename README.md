@@ -5,7 +5,7 @@
 [![Django](https://img.shields.io/badge/Django-6.0.8-green.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-173%20passing-brightgreen.svg)](https://github.com/davioliveiraes/atalho-prancheta)
+[![Tests](https://img.shields.io/badge/Tests-248%20passing-brightgreen.svg)](https://github.com/davioliveiraes/atalho-prancheta)
 
 Encurtador de links com contagem de cliques. A diferença está no que acontece
 depois: **o código divulgado nunca muda, e o destino por trás dele pode ser
@@ -24,7 +24,8 @@ Redis 8 · React 19 · TypeScript · Vite 8 · Docker
 ## Funcionalidades
 
 - **Destino atualizável** sem alterar o atalho divulgado
-- **Endereço na raiz** — `seudominio.com/abc123`, com código gerado ou escolhido
+- **Endereço na raiz** — `seudominio.com/loja-natal`, com apelido gerado ou escolhido
+- **Endereço por subdomínio** — `loja-natal.seudominio.com` para o mesmo link (opcional)
 - **Cliques totais e únicos** por IP, guardando navegador, origem e horário
 - **Expiração por data** e **limite de visitantes**; fechado, o link avisa sem revelar o destino
 - **QR Code** gerado no servidor, apontando para o link curto
