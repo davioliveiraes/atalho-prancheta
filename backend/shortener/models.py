@@ -8,6 +8,9 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from .slugs import MAX_LENGTH as MAX_SLUG_LENGTH
+from .slugs import normalize_subdomain, validate_slug
+
 
 class ShortenedURL(models.Model):
     """
@@ -15,7 +18,8 @@ class ShortenedURL(models.Model):
 
     Atributos:
         original_url(str): A URL longa original a ser encurtada.
-        short_code (str): O código curto exclusivo da URL.
+        short_code (str): O código curto exclusivo da URL, servido em /{codigo}.
+        subdomain (str): Rótulo opcional que serve o mesmo link em {rotulo}.{dominio}.
         owner (User): Conta dona do link; vazio quando criado sem conta.
         is_active (bool): Indica se a URL encurtada está ativa.
         expires_at (datetime): Data/hora de expiração opcional para a URL.
@@ -35,10 +39,28 @@ class ShortenedURL(models.Model):
 
     short_code = models.CharField(
         verbose_name="Codigo Curto",
-        max_length=10,
+        # 10 cabia o codigo sorteado de 6 e mais nada: `grupowhatsempresa` tem
+        # 17. O teto agora e o mesmo do subdominio, porque os dois guardam a
+        # mesma coisa escrita do mesmo jeito.
+        max_length=MAX_SLUG_LENGTH,
         unique=True,
         db_index=True,
+        validators=[validate_slug],
         help_text="Codigo unico para a URL encurtada",
+    )
+
+    subdomain = models.CharField(
+        verbose_name="Subdominio",
+        max_length=MAX_SLUG_LENGTH,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        validators=[validate_slug],
+        # Opcional, e por isso NULL em vez de string vazia: `unique` deixa
+        # passar quantos NULL existirem, mas so um "". Sem link nenhum usando
+        # subdominio, a coluna precisa aceitar a repeticao.
+        help_text="Rotulo que responde em {subdominio}.{dominio}. Vazio para link so no caminho",
     )
 
     owner = models.ForeignKey(
@@ -105,11 +127,24 @@ class ShortenedURL(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["short_code"]),
+            models.Index(fields=["subdomain"]),
             models.Index(fields=["created_at"]),
             models.Index(fields=["is_active"]),
             # O painel lista sempre por dono e em ordem de criacao.
             models.Index(fields=["owner", "-created_at"]),
         ]
+
+    def save(self, *args, **kwargs):
+        """
+        O subdomínio é gravado sempre em minúsculas, e vazio vira NULL.
+
+        O navegador manda o Host em minúsculas, então guardar `Loja` tornaria o
+        link inalcançável — a busca por `loja` não acharia nada. Normalizar aqui
+        vale também para o admin e para o shell, que não passam pelo
+        serializador.
+        """
+        self.subdomain = normalize_subdomain(self.subdomain) or None
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.short_code} -> {self.original_url}"

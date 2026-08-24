@@ -38,3 +38,49 @@ RESERVED_CODES = frozenset(
 def is_reserved(code):
     """Sem diferenciar maiúsculas: `Painel` roubaria a rota igualzinho."""
     return code.lower() in RESERVED_CODES
+
+
+def reserved_alternation():
+    """
+    `admin|api|criar-conta|...` — o miolo da exclusão usada no roteamento.
+
+    A rota da raiz monta a sua a partir daqui. O nginx e o Vite carregam uma
+    cópia literal, porque decidem o destino antes de existir processo Python.
+    """
+    return "|".join(sorted(RESERVED_CODES))
+
+
+# O subdomínio tem uma segunda lista, além da de cima.
+#
+# `www.atalho.app` e `mail.atalho.app` não disputam rota com tela nenhuma — o
+# problema é outro: são nomes que a infraestrutura do domínio usa ou vai usar, e
+# um link que os tomasse deixaria o site ou o e-mail inalcançável.
+RESERVED_SUBDOMAINS = RESERVED_CODES | frozenset(
+    {
+        "www",
+        "app",
+        "mail",
+        "smtp",
+        "imap",
+        "pop",
+        "ftp",
+        "ns1",
+        "ns2",
+        "mx",
+        "cdn",
+        "assets",
+        "blog",
+        "status",
+        "suporte",
+        "docs",
+        "dev",
+        "staging",
+        "test",
+        "localhost",
+    }
+)
+
+
+def is_reserved_subdomain(label):
+    """Vale a lista dos códigos mais os nomes que o próprio domínio precisa."""
+    return label.lower() in RESERVED_SUBDOMAINS

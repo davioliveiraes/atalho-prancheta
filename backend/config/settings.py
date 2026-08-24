@@ -43,6 +43,39 @@ for internal_host in INTERNAL_ALLOWED_HOSTS:
     if internal_host and internal_host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(internal_host)
 
+# Link curto por subdominio: `loja-natal.atalho.app`.
+#
+# Este e o dominio sob o qual os subdominios de link respondem. Vazio (o padrao)
+# desliga a funcionalidade por inteiro: o middleware nao olha o Host e o painel
+# nao oferece o campo. E o que mantem a suite e a venv local rodando sem
+# configuracao nenhuma.
+#
+# Ligar isto em producao exige tres coisas do lado de fora, descritas no
+# DEPLOY.md: um registro DNS curinga, um certificado curinga e o `server_name`
+# do nginx aceitando o curinga.
+SHORTLINK_BASE_DOMAIN = config("SHORTLINK_BASE_DOMAIN", default="").strip().lower().lstrip(".")
+
+if SHORTLINK_BASE_DOMAIN:
+    # O ponto na frente e a sintaxe do Django para "este dominio e qualquer
+    # subdominio dele". Sem isto, todo acesso por subdominio morreria em
+    # DisallowedHost antes de chegar ao middleware.
+    # Sem a porta: o Django a separa do Host antes de conferir esta lista, e
+    # uma entrada com porta nunca casaria com nada. Em desenvolvimento o valor
+    # costuma ser `localhost:8000`, por causa do endereco montado para a tela.
+    wildcard_host = f".{SHORTLINK_BASE_DOMAIN.split(':')[0]}"
+    if wildcard_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(wildcard_host)
+
+# 302 ou 307. Os dois sao temporarios — o que este servico nunca devolve e 301,
+# que o navegador guarda para sempre e deixaria o dono sem poder trocar o
+# destino de um link ja clicado. A diferenca entre os dois e o metodo: o 307
+# obriga a repetir a requisicao como veio; num link divulgado, sempre GET, da no
+# mesmo.
+SHORTLINK_REDIRECT_STATUS = config("SHORTLINK_REDIRECT_STATUS", default=302, cast=int)
+
+if SHORTLINK_REDIRECT_STATUS not in (302, 307):
+    raise ValueError("SHORTLINK_REDIRECT_STATUS aceita 302 ou 307.")
+
 # Quantos proxies reversos confiaveis existem na frente da aplicacao.
 #
 # X-Forwarded-For e escrito pelo cliente e so vira confiavel depois que um proxy
@@ -76,6 +109,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Antes de tudo que serve conteudo: num acesso por subdominio o caminho e
+    # `/`, o mesmo da pagina inicial, e o subdominio pertence ao link inteiro.
+    "shortener.middleware.SubdomainRedirectMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",

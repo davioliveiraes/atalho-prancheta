@@ -71,7 +71,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
         "max_clicks",
     ]
 
-    search_fields = ["short_code", "original_url", "owner__email"]
+    search_fields = ["short_code", "subdomain", "original_url", "owner__email"]
 
     readonly_fields = [
         "short_code",
@@ -94,7 +94,7 @@ class ShortenedURLAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             "Informacoes Basicas",
-            {"fields": ("original_url", "short_code", "short_url_full", "owner")},
+            {"fields": ("original_url", "short_code", "subdomain", "short_url_full", "owner")},
         ),
         (
             "QR Code",

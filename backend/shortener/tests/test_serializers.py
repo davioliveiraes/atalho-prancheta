@@ -97,8 +97,11 @@ class ShortenedURLUpdateSerializerTest(TestCase):
         )
 
     def test_short_code_and_counters_are_not_fields(self):
+        """O subdomínio se edita; o código do caminho, não — ele é o endereço divulgado."""
         fields = set(ShortenedURLUpdateSerializer().fields)
-        self.assertEqual(fields, {"original_url", "is_active", "expires_at", "max_clicks"})
+        self.assertEqual(
+            fields, {"original_url", "subdomain", "is_active", "expires_at", "max_clicks"}
+        )
 
     def test_rejects_a_new_expiration_in_the_past(self):
         serializer = ShortenedURLUpdateSerializer(

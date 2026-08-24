@@ -7,9 +7,74 @@ Este módulo contém todos os serializadores DRF para validação de dados, tran
 from django.utils import timezone
 
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
+from .addresses import path_url, subdomain_url
+from .destinations import DestinationURLField
 from .models import Click, ShortenedURL
-from .reserved import is_reserved
+from .reserved import is_reserved, is_reserved_subdomain
+from .slugs import MAX_LENGTH as MAX_SLUG_LENGTH
+from .slugs import normalize_subdomain, validate_slug
+from .utils import generate_short_code
+
+
+class SlugField(serializers.CharField):
+    """
+    O apelido escolhido pelo usuário, com as regras de `slugs.py`.
+
+    Serve aos dois campos que aceitam um: o código do caminho e o subdomínio.
+    A unicidade não entra aqui porque cada um tem a sua mensagem.
+    """
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("max_length", MAX_SLUG_LENGTH)
+        super().__init__(**kwargs)
+        self.validators.append(validate_slug)
+
+
+class SubdomainField(SlugField):
+    """
+    O subdomínio: apelido normalizado para minúsculas, e opcional de verdade.
+
+    Vazio e nulo significam a mesma coisa — "este link não tem subdomínio" — e
+    os dois viram None antes de qualquer validação. É assim que a tela devolve
+    um link ao estado de só responder no caminho.
+    """
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault("required", False)
+        kwargs.setdefault("allow_null", True)
+        kwargs.setdefault("allow_blank", True)
+        super().__init__(**kwargs)
+        self.validators.append(
+            UniqueValidator(
+                queryset=ShortenedURL.objects.all(),
+                message="Este subdominio ja esta em uso. Escolha outro.",
+            )
+        )
+        self.validators.append(_validate_subdomain_not_reserved)
+
+    def run_validation(self, data=serializers.empty):
+        if data in ("", None):
+            return None
+        return super().run_validation(data)
+
+    def to_internal_value(self, data):
+        return normalize_subdomain(super().to_internal_value(data))
+
+
+def _validate_subdomain_not_reserved(value):
+    """
+    A lista de `reserved.py` mais os nomes que o domínio usa por fora.
+
+    `www` não disputa rota com tela nenhuma, mas um link com esse subdomínio
+    deixaria o próprio site inalcançável.
+    """
+    if is_reserved_subdomain(value):
+        raise serializers.ValidationError(
+            "Este subdominio e reservado pela aplicacao. Escolha outro."
+        )
+    return value
 
 
 class ClickSerializer(serializers.ModelSerializer):
@@ -49,6 +114,7 @@ class ShortenedURLListSerializer(serializers.ModelSerializer):
     """
 
     short_url = serializers.SerializerMethodField()
+    subdomain_url = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -56,8 +122,10 @@ class ShortenedURLListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "short_code",
+            "subdomain",
             "original_url",
             "short_url",
+            "subdomain_url",
             "is_active",
             "expires_at",
             "max_clicks",
@@ -68,10 +136,10 @@ class ShortenedURLListSerializer(serializers.ModelSerializer):
         ]
 
     def get_short_url(self, obj):
-        request = self.context.get("request")
-        if request:
-            return request.build_absolute_uri(f"/{obj.short_code}")
-        return f"/{obj.short_code}"
+        return path_url(self.context.get("request"), obj.short_code)
+
+    def get_subdomain_url(self, obj):
+        return subdomain_url(self.context.get("request"), obj.subdomain)
 
     def get_status(self, obj):
         can_access, message = obj.can_be_accessed()
@@ -92,6 +160,7 @@ class ShortenedURLDetailSerializer(serializers.ModelSerializer):
     """
 
     short_url = serializers.SerializerMethodField()
+    subdomain_url = serializers.SerializerMethodField()
     statistics = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     recent_clicks = serializers.SerializerMethodField()
@@ -102,7 +171,9 @@ class ShortenedURLDetailSerializer(serializers.ModelSerializer):
             "id",
             "original_url",
             "short_code",
+            "subdomain",
             "short_url",
+            "subdomain_url",
             "is_active",
             "expires_at",
             "max_clicks",
@@ -126,10 +197,10 @@ class ShortenedURLDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_short_url(self, obj):
-        request = self.context.get("request")
-        if request:
-            return request.build_absolute_uri(f"/{obj.short_code}")
-        return f"/{obj.short_code}"
+        return path_url(self.context.get("request"), obj.short_code)
+
+    def get_subdomain_url(self, obj):
+        return subdomain_url(self.context.get("request"), obj.subdomain)
 
     def get_statistics(self, obj):
         return {
@@ -148,6 +219,21 @@ class ShortenedURLDetailSerializer(serializers.ModelSerializer):
         return ClickSerializer(recent, many=True).data
 
 
+def draw_short_code(length=6):
+    """
+    Sorteia um código livre para quem não escolheu apelido.
+
+    `painel` tem exatamente seis caracteres: improvável não é impossível, e o
+    sorteio não pode entregar a rota de ninguém.
+    """
+    while True:
+        code = generate_short_code(length)
+        if is_reserved(code):
+            continue
+        if not ShortenedURL.objects.filter(short_code=code).exists():
+            return code
+
+
 class ShortenedURLCreateSerializer(serializers.ModelSerializer):
     """
     Serializador para criação de URLs encurtadas.
@@ -160,39 +246,30 @@ class ShortenedURLCreateSerializer(serializers.ModelSerializer):
         max_clicks: Deve ser positivo, se fornecido
     """
 
-    short_code = serializers.CharField(
-        max_length=10,
+    original_url = DestinationURLField()
+
+    # O link curto mora na raiz do dominio, junto das telas, e o subdominio ao
+    # lado dos nomes que o proprio dominio usa: as duas listas de reservados
+    # sao aplicadas pelos campos, em `slugs.py` e aqui em cima.
+    short_code = SlugField(
         required=False,
         allow_blank=True,
-        help_text="Custom short code (optional, will be auto-generated if not provided)",
+        validators=[
+            UniqueValidator(
+                queryset=ShortenedURL.objects.all(),
+                message="Este codigo curto ja esta em uso. Escolha outro.",
+            )
+        ],
+        help_text="Apelido do caminho (opcional; sorteado quando nao informado)",
+    )
+
+    subdomain = SubdomainField(
+        help_text="Apelido do subdominio (opcional)",
     )
 
     class Meta:
         model = ShortenedURL
-        fields = ["original_url", "short_code", "expires_at", "max_clicks"]
-
-    def validate_short_code(self, value):
-        if value:
-            if ShortenedURL.objects.filter(short_code=value).exists():
-                raise serializers.ValidationError(
-                    "Este codigo curto ja esta em uso. Escolha outro."
-                )
-
-            # O link curto mora na raiz do dominio, junto das telas: um codigo
-            # `painel` tiraria o painel do ar.
-            if is_reserved(value):
-                raise serializers.ValidationError(
-                    "Este codigo e reservado pela aplicacao. Escolha outro."
-                )
-
-            if not value.isalnum():
-                raise serializers.ValidationError(
-                    "Codigo curto deve conter apenas letras e numeros."
-                )
-
-            if len(value) < 3:
-                raise serializers.ValidationError("Codigo curto deve ter no minimo 3 caracteres.")
-        return value
+        fields = ["original_url", "short_code", "subdomain", "expires_at", "max_clicks"]
 
     def validate_expires_at(self, value):
         if value and value <= timezone.now():
@@ -206,18 +283,7 @@ class ShortenedURLCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if not validated_data.get("short_code"):
-            import random
-            import string
-
-            while True:
-                short_code = "".join(random.choices(string.ascii_letters + string.digits, k=6))
-                # `painel` tem exatamente seis caracteres: improvavel nao e
-                # impossivel, e o sorteio nao pode entregar a rota de ninguem.
-                if is_reserved(short_code):
-                    continue
-                if not ShortenedURL.objects.filter(short_code=short_code):
-                    validated_data["short_code"] = short_code
-                    break
+            validated_data["short_code"] = draw_short_code()
 
         return super().create(validated_data)
 
@@ -229,10 +295,15 @@ class ShortenedURLUpdateSerializer(serializers.ModelSerializer):
     Permite a atualização de campos mutáveis, protegendo os imutáveis, como short_code e contadores de cliques.
 
     Campos atualizáveis:
-        original_url: A URL longa original
+        original_url: A URL longa original — trocar o destino é o que faz o
+            mesmo endereço curto passar a levar a outro lugar
+        subdomain: O apelido do subdomínio; vazio remove o subdomínio
         is_active: Status ativo/inativo
         expires_at: Data/hora de expiração
         max_clicks: Limite máximo de cliques
+
+    `short_code` não está na lista de propósito: ele é o endereço já divulgado,
+    e trocá-lo apagaria do ar todo QR Code impresso e toda mensagem enviada.
 
     Sem validação de `max_clicks` mínimo, ao contrário da criação: 0 é o valor
     de "sem limite" no modelo e é assim que a tela devolve um link ao estado
@@ -241,9 +312,12 @@ class ShortenedURLUpdateSerializer(serializers.ModelSerializer):
     não passa nos dois casos — o campo do modelo é PositiveIntegerField.
     """
 
+    original_url = DestinationURLField(required=False)
+    subdomain = SubdomainField()
+
     class Meta:
         model = ShortenedURL
-        fields = ["original_url", "is_active", "expires_at", "max_clicks"]
+        fields = ["original_url", "subdomain", "is_active", "expires_at", "max_clicks"]
 
     def validate_expires_at(self, value):
         """

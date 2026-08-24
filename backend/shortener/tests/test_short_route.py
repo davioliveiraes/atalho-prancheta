@@ -138,3 +138,72 @@ class ReservedCodeTest(APITestCase):
         short_url = response.data["short_url"]  # type: ignore
         self.assertTrue(short_url.endswith("/curto1"), short_url)
         self.assertNotIn("/api/r/", short_url)
+
+
+class RedirectResponseTest(TestCase):
+    """
+    O desvio precisa ser temporário e não ficar guardado.
+
+    O destino de um link muda — é o dono trocando o grupo de WhatsApp lotado
+    pelo novo sem reimprimir nada — e um desvio guardado no navegador deixaria
+    quem já clicou preso no destino antigo, sem nem consultar o servidor.
+    """
+
+    def setUp(self):
+        self.link = ShortenedURL.objects.create(
+            original_url="https://chat.whatsapp.com/ANTIGO", short_code="grupo1"
+        )
+
+    def test_the_redirect_is_temporary(self):
+        response = self.client.get("/grupo1")
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_the_redirect_is_not_cacheable(self):
+        response = self.client.get("/grupo1")
+
+        cache_control = response.headers["Cache-Control"]
+        self.assertIn("no-store", cache_control)
+        self.assertIn("max-age=0", cache_control)
+
+    @override_settings(SHORTLINK_REDIRECT_STATUS=307)
+    def test_the_status_can_be_307(self):
+        response = self.client.get("/grupo1")
+
+        self.assertEqual(response.status_code, 307)
+        self.assertEqual(response.url, "https://chat.whatsapp.com/ANTIGO")  # type: ignore
+
+    def test_the_next_access_follows_the_new_destination(self):
+        """O caso inteiro, do começo ao fim: o endereço fica, o destino troca."""
+        self.assertEqual(self.client.get("/grupo1").url, "https://chat.whatsapp.com/ANTIGO")  # type: ignore
+
+        self.link.original_url = "https://chat.whatsapp.com/NOVO"
+        self.link.save()
+
+        self.assertEqual(self.client.get("/grupo1").url, "https://chat.whatsapp.com/NOVO")  # type: ignore
+
+
+class HyphenatedAliasTest(TestCase):
+    """`grupowhatsempresa` tem 17 caracteres, e `loja-natal` tem um hífen."""
+
+    def test_a_long_alias_answers_at_the_root(self):
+        ShortenedURL.objects.create(
+            original_url="https://exemplo.com", short_code="grupowhatsempresa"
+        )
+
+        response = self.client.get("/grupowhatsempresa")
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_a_hyphenated_alias_answers_at_the_root(self):
+        ShortenedURL.objects.create(original_url="https://exemplo.com", short_code="loja-natal")
+
+        response = self.client.get("/loja-natal")
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_a_screen_name_is_not_a_link(self):
+        """A rota da raiz exclui os reservados: `/criar-conta` é tela."""
+        response = self.client.get("/criar-conta")
+
+        self.assertEqual(response.status_code, 404)

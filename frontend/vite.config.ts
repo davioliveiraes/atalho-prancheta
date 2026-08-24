@@ -26,10 +26,10 @@ export default defineConfig(({ mode }) => {
       proxy: {
         "^/api/": proxyRule,
         "^/media/": proxyRule,
-        // O link curto mora na raiz: `/{codigo}` vai para o backend, o resto
-        // continua sendo tela. A lista de exclusões espelha o
-        // `backend/shortener/reserved.py`.
-        [`^/(?!(?:painel|links|entrar|criar-conta|como-usar|referencia|api|admin|static|media|r)/?$)[A-Za-z0-9]{3,10}/?$`]:
+        // O link curto mora na raiz: `/{apelido}` vai para o backend, o resto
+        // continua sendo tela. O padrão inteiro sai de `shortlink_path_regex()`,
+        // em `backend/shortener/slugs.py`.
+        [`^/(?!(?:admin|api|como-usar|criar-conta|entrar|links|media|painel|r|referencia|static)/?$)[A-Za-z0-9](?:[A-Za-z0-9-]{1,30}[A-Za-z0-9])?/?$`]:
           proxyRule,
       },
     },

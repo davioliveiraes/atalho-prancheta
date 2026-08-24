@@ -15,7 +15,7 @@
 server {
     listen 80;
     listen [::]:80;
-    server_name ${DOMAIN};
+    server_name ${DOMAIN} *.${DOMAIN};
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -98,16 +98,19 @@ server {
         proxy_redirect off;
     }
 
-    # O link curto: /{codigo}.
+    # O link curto: /{apelido}.
     #
     # A raiz é dividida entre os links e as telas, então o padrão exclui os
     # nomes reservados — a mesma lista de `backend/shortener/reserved.py`.
     # A exclusão exige o nome inteiro: `/painel` não é link, mas `/painelx` é
-    # um código legítimo.
+    # um apelido legítimo.
+    #
+    # O padrão inteiro sai de `shortlink_path_regex()`, em
+    # `backend/shortener/slugs.py`. Mexeu lá, mexa aqui e no vite.config.ts.
     #
     # Locations por expressão são testados antes do prefixo `/`, e por isso
     # este bloco vence a interface sem precisar vir declarado primeiro.
-    location ~ "^/(?!(?:painel|links|entrar|criar-conta|como-usar|referencia|api|admin|static|media|r)/?$)[A-Za-z0-9]{3,10}/?$" {
+    location ~ "^/(?!(?:admin|api|como-usar|criar-conta|entrar|links|media|painel|r|referencia|static)/?$)[A-Za-z0-9](?:[A-Za-z0-9-]{1,30}[A-Za-z0-9])?/?$" {
         proxy_pass http://backend:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -120,5 +123,41 @@ server {
     # index e quem resolve a rota é o roteador do React.
     location / {
         try_files $uri $uri/ /index.html;
+    }
+}
+
+# ------------------------------------------------- HTTPS curinga (*.dominio)
+#
+# O link por subdomínio: `loja-natal.${DOMAIN}`. Tudo aqui vai para o backend —
+# num acesso por subdomínio o caminho é `/`, e quem decide o que fazer com ele é
+# o SubdomainRedirectMiddleware, olhando o Host.
+#
+# Exige um certificado que cubra `*.${DOMAIN}`, o que o Let's Encrypt só emite
+# pelo desafio DNS-01. Sem ele este bloco continua de pé e o domínio principal
+# segue intacto — só o acesso por subdomínio é que dá erro de certificado no
+# navegador. O passo a passo está no DEPLOY.md.
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name *.${DOMAIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location / {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
     }
 }
