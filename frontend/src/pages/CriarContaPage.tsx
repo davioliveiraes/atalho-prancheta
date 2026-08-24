@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { AuthScreen } from "../components/AuthScreen";
-import { ErrorLine } from "../components/elements";
+import { ErrorLine, PasswordInput } from "../components/elements";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Link, navigate } from "../lib/router";
@@ -93,16 +93,13 @@ export function CriarContaPage() {
 
         <div className="field">
           <label htmlFor="conta-senha">Senha</label>
-          <input
+          <PasswordInput
             id="conta-senha"
-            className="input"
-            type="password"
-            required
             autoComplete="new-password"
             value={password}
-            aria-invalid={error?.field("password") ? true : undefined}
+            invalid={!!error?.field("password")}
             style={inputStyle}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={setPassword}
           />
           {/* O Django devolve todos os motivos de uma vez; cada um vira linha. */}
           {error?.list("password").map((text) => (
@@ -115,16 +112,13 @@ export function CriarContaPage() {
 
         <div className="field">
           <label htmlFor="conta-confirma">Repetir a senha</label>
-          <input
+          <PasswordInput
             id="conta-confirma"
-            className="input"
-            type="password"
-            required
             autoComplete="new-password"
             value={confirm}
-            aria-invalid={error?.field("password_confirm") ? true : undefined}
+            invalid={!!error?.field("password_confirm")}
             style={inputStyle}
-            onChange={(event) => setConfirm(event.target.value)}
+            onChange={setConfirm}
           />
           {error?.field("password_confirm") && (
             <ErrorLine>{error.field("password_confirm")}</ErrorLine>

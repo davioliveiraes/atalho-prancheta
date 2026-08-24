@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { AuthScreen } from "../components/AuthScreen";
-import { ErrorLine } from "../components/elements";
+import { ErrorLine, PasswordInput } from "../components/elements";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Link, navigate } from "../lib/router";
@@ -65,16 +65,13 @@ export function EntrarPage() {
 
         <div className="field">
           <label htmlFor="entrar-senha">Senha</label>
-          <input
+          <PasswordInput
             id="entrar-senha"
-            className="input"
-            type="password"
-            required
             autoComplete="current-password"
             value={password}
-            aria-invalid={message ? true : undefined}
+            invalid={!!message}
             style={{ minHeight: mobile ? 44 : undefined }}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={setPassword}
           />
         </div>
 
