@@ -5,6 +5,7 @@ import { Marca } from "./Marca";
 import { useMobileBar } from "../lib/mobileBar";
 import { Link, navigate, usePathname } from "../lib/router";
 import { useIsMobile } from "../lib/useIsMobile";
+import { ThemeToggle } from "./ThemeToggle";
 
 /**
  * Barra de navegação. A marca fica à esquerda e os links vão agrupados à
@@ -105,6 +106,10 @@ export function Nav() {
         >
           API
         </Link>
+
+        {/* Entre os destinos e a conta: é ajuste da interface, não um lugar
+            para onde ir, e fecha a fileira antes dos controles de sessão. */}
+        <ThemeToggle />
 
         {user ? (
           <>

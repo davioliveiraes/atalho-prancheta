@@ -10,8 +10,36 @@
       name="description"
       content="Encurte URLs, acompanhe cada clique e controle o estado de cada link."
     />
+    <!-- Valor de partida; `src/lib/theme.ts` reescreve com o fundo em vigor. -->
     <meta name="theme-color" content="#f2f2f3" />
     <title>Atalho Prancheta</title>
+
+    <!--
+      O tema antes da primeira pintura.
+
+      Precisa ser aqui, embutido e sem `defer`: o bundle só roda depois de
+      baixado, e até lá a página já apareceu — quem escolheu escuro veria um
+      lampejo branco a cada carga. Escreve o atributo e para; o resto (a meta
+      acima, o botão da barra, o acompanhamento do sistema) é de
+      `src/lib/theme.ts`.
+
+      A chave e a regra de resolução são as mesmas de lá. Mexeu num, mexa no
+      outro.
+    -->
+    <script>
+      (function () {
+        var saved = null;
+        try {
+          saved = localStorage.getItem("atalho.tema");
+        } catch (e) {
+          // Armazenamento bloqueado: segue a preferência do sistema.
+        }
+        var dark =
+          saved === "dark" ||
+          (saved !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

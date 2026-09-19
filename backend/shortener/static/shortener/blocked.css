@@ -25,12 +25,13 @@
 }
 
 :root {
+  color-scheme: light;
+
   --color-bg: #f2f2f3;
   --color-text: #1d1f20;
   --color-accent: #5980a6;
   --color-accent-600: #597ea3;
   --color-accent-700: #416180;
-  --color-neutral-900: #1d1f20;
 
   --color-divider: color-mix(in srgb, var(--color-text) 16%, transparent);
   --ink-secondary: color-mix(in srgb, var(--color-text) 78%, transparent);
@@ -40,7 +41,35 @@
   --font-heading: "Barlow Condensed", "Arial Narrow", sans-serif;
   --font-body: "Barlow", system-ui, sans-serif;
 
-  --shadow-md: 0 2px 8px color-mix(in srgb, var(--color-text) 12%, transparent);
+  /* Tinta declarada, e não `--color-text`: no escuro o texto é claro e a
+     sombra viraria um halo branco em volta do bloco. */
+  --shadow-ink: #1d1f20;
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--shadow-ink) 12%, transparent);
+}
+
+/* Tema escuro.
+ *
+ * Aqui segue a preferência do sistema e nada mais — diferente da interface,
+ * que guarda a escolha do usuário e escreve `data-theme` no <html>. Estas
+ * quatro páginas não rodam JavaScript nenhum, e não vale acrescentar um
+ * bundle a uma página de erro só para ler a chave da outra. A paleta é a
+ * mesma; muda o gatilho.
+ *
+ * Só os valores literais aparecem abaixo: `--ink-*`, a régua e o medidor são
+ * `color-mix` sobre `--color-text` e acompanham a troca sozinhos. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-bg: #17191a;
+    --color-text: #eceded;
+    --color-accent: #7fa3c6;
+    --color-accent-600: #93b3d1;
+    --color-accent-700: #a8c2da;
+
+    --shadow-ink: #000;
+    --shadow-md: 0 2px 8px color-mix(in srgb, var(--shadow-ink) 50%, transparent);
+  }
 }
 
 *,

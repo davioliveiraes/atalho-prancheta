@@ -30,6 +30,7 @@ Redis 8 · React 19 · TypeScript · Vite 8 · Docker
 - **Expiração por data** e **limite de visitantes**; fechado, o link avisa sem revelar o destino
 - **QR Code** gerado no servidor, apontando para o link curto
 - **Contas com JWT**, busca, filtros e resumo de cliques no painel
+- **Tema claro e escuro**, começando pelo do sistema e guardando a escolha
 
 ---
 

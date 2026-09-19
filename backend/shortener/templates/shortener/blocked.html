@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex" />
-    <meta name="theme-color" content="#f2f2f3" />
+    {# Sem JavaScript nesta página, a barra do navegador acompanha o sistema #}
+    {# pelo atributo `media` — os mesmos dois fundos da folha. #}
+    <meta name="theme-color" content="#f2f2f3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#17191a" media="(prefers-color-scheme: dark)" />
     <title>{{ title }} — Atalho Prancheta</title>
     <link rel="stylesheet" href="{% static 'shortener/blocked.css' %}" />
   </head>

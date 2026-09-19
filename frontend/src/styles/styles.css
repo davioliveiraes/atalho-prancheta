@@ -7,6 +7,12 @@
 /* --------------------------------------------------------------- 1. Tokens */
 
 :root {
+  /* Claro é a paleta escrita aqui; o bloco de escuro, logo depois desta
+     seção, troca só os valores. `color-scheme` é o que faz o navegador
+     desenhar barra de rolagem, seletor de data e preenchimento automático na
+     mesma tinta — sem ele o campo de expiração continuaria branco no escuro. */
+  color-scheme: light;
+
   /* Cor — base */
   --color-bg: #f2f2f3;
   --color-surface: #e9e9ea;
@@ -38,6 +44,14 @@
   /* Régua e borda: uma única tinta para todo hairline */
   --color-divider: color-mix(in srgb, var(--color-text) 16%, transparent);
 
+  /* Realce da linha percorrida pelo ponteiro, na tabela. */
+  --color-hover: color-mix(in srgb, var(--color-text) 4%, transparent);
+
+  /* Véu do diálogo. Valor literal e não um degrau da rampa neutra: no escuro
+     a rampa inverte, e o véu sairia branco — clareando a tela em vez de
+     apagá-la. */
+  --color-scrim: color-mix(in srgb, #1d1f20 50%, transparent);
+
   /* Regra de tinta — as telas nunca escrevem percentual solto */
   --ink-body: var(--color-text);
   --ink-secondary: color-mix(in srgb, var(--color-text) 78%, transparent);
@@ -59,10 +73,13 @@
   --cell-gap: 40px;
   --measure: 1280px;
 
-  /* Elevacao */
-  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--color-text) 10%, transparent);
-  --shadow-md: 0 2px 8px color-mix(in srgb, var(--color-text) 12%, transparent);
-  --shadow-lg: 0 8px 24px color-mix(in srgb, var(--color-text) 14%, transparent);
+  /* Elevacao. A tinta da sombra é declarada e não sai de `--color-text`: no
+     escuro o texto é claro, e a sombra viraria um halo branco em volta do
+     objeto. */
+  --shadow-ink: #1d1f20;
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--shadow-ink) 10%, transparent);
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--shadow-ink) 12%, transparent);
+  --shadow-lg: 0 8px 24px color-mix(in srgb, var(--shadow-ink) 14%, transparent);
 
   /* Alvo de toque */
   --control-h: 38px;
@@ -70,6 +87,71 @@
   /* Altura da barra fixa: 44px de controle + 16px de padding em cima e embaixo
      + 1px de borda. As telas cheias descontam isso do viewport. */
   --nav-h: 77px;
+}
+
+/* ---------------------------------------------------------- 1b. Tema escuro
+
+   Só valores. Nenhuma regra de componente, daqui para baixo, sabe em que tema
+   está — é a condição para os dois temas nunca divergirem de comportamento.
+
+   O que não aparece aqui aparece por consequência: os papéis de tinta
+   (`--ink-*`), a régua e o realce são `color-mix` sobre `--color-text`, e o
+   `var()` é resolvido na hora do uso. Trocar `--color-text` neste bloco muda
+   os cinco de uma vez.
+
+   As duas rampas invertem de sentido. O contrato é o mesmo dos dois lados:
+   -100 é o degrau mais próximo do fundo da página e -900 o mais distante
+   dele. É o que mantém `.tag-accent` (fundo 200, tinta 800) e `.kicker`
+   (tinta 700) legíveis nos dois temas sem que nenhum componente precise
+   escolher um degrau diferente.
+
+   `data-theme` guarda sempre um tema resolvido — claro ou escuro, nunca
+   "sistema". Quem traduz a preferência do sistema é `src/lib/theme.ts`, e
+   antes da primeira pintura o script embutido do `index.html`. Por isso aqui
+   não há `@media (prefers-color-scheme: dark)`: ele obrigaria a escrever esta
+   paleta duas vezes, e a segunda cópia sairia de sincronia. */
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #17191a;
+  --color-surface: #212425;
+  --color-text: #eceded;
+  /* Acento levantado, mesma matiz. `#5980a6` sobre fundo escuro cai para
+     4,3:1, e é este token que pinta o botão cheio, o anel de foco e a marca —
+     lugares onde o contraste é o que faz o elemento existir. */
+  --color-accent: #7fa3c6;
+
+  --color-accent-100: #1b2b3a;
+  --color-accent-200: #26394b;
+  --color-accent-300: #35506a;
+  --color-accent-400: #52789e;
+  --color-accent-500: #7fa3c6;
+  --color-accent-600: #93b3d1;
+  --color-accent-700: #a8c2da;
+  --color-accent-800: #c2d5e6;
+  --color-accent-900: #dceaf5;
+
+  --color-neutral-100: #17191a;
+  --color-neutral-200: #272a2b;
+  --color-neutral-300: #383b3c;
+  --color-neutral-400: #4c4f50;
+  --color-neutral-500: #6c6f70;
+  --color-neutral-600: #8b8e8f;
+  --color-neutral-700: #a9acad;
+  --color-neutral-800: #c9cbcc;
+  --color-neutral-900: #eceded;
+
+  /* Mais tinta que no claro: 4% de branco sobre fundo escuro não aparece. */
+  --color-hover: color-mix(in srgb, var(--color-text) 7%, transparent);
+  --color-scrim: color-mix(in srgb, #000 65%, transparent);
+
+  /* Preto puro e bem mais opaco. Sombra sobre fundo escuro precisa de mais
+     tinta para separar o objeto do fundo — no claro, 12% já bastam. */
+  --shadow-ink: #000;
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--shadow-ink) 40%, transparent);
+  --shadow-md: 0 2px 8px color-mix(in srgb, var(--shadow-ink) 50%, transparent);
+  --shadow-lg: 0 8px 24px color-mix(in srgb, var(--shadow-ink) 60%, transparent);
 }
 
 @media (max-width: 900px) {
@@ -484,6 +566,23 @@ img {
   box-shadow: inset 0 -2px 0 var(--color-accent);
 }
 
+/* Botão de tema. Leva `.nav-link` para herdar altura, tipografia e tinta dos
+   vizinhos — é a mesma fileira —, e só desfaz aqui o que o navegador impõe a
+   um <button> e um <a> não tem. */
+.nav-theme {
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+/* No desktop, só o ícone: a barra já carrega quatro destinos e a conta, e o
+   rótulo é o que primeiro rouba largura. */
+.nav-theme > span {
+  display: none;
+}
+
 /* Menu mobile — o seletor precisa de .nav para vencer o `display` de .btn,
    que é definido mais adiante na folha com a mesma especificidade. */
 .nav .nav-toggle {
@@ -524,6 +623,16 @@ img {
 
   .nav-link:last-child {
     border-bottom: 0;
+  }
+
+  /* No menu empilhado a fileira vira lista e há largura de sobra: o rótulo
+     aparece, e o botão se alinha à esquerda como os destinos acima dele. */
+  .nav-theme {
+    justify-content: flex-start;
+  }
+
+  .nav-theme > span {
+    display: inline;
   }
 }
 
@@ -812,7 +921,7 @@ img {
 }
 
 .table tbody tr:hover {
-  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  background: var(--color-hover);
 }
 
 .table .num {
@@ -945,7 +1054,7 @@ img {
 }
 
 .dialog::backdrop {
-  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+  background: var(--color-scrim);
 }
 
 .dialog-head {
@@ -985,6 +1094,12 @@ img {
 .duotone {
   filter: grayscale(1) contrast(1.1);
   mix-blend-mode: multiply;
+}
+
+/* `multiply` só funciona contra fundo claro: sobre o escuro ele afunda a
+   imagem inteira até o preto. `screen` é a operação espelhada. */
+:root[data-theme="dark"] .duotone {
+  mix-blend-mode: screen;
 }
 
 /* ------------------------------------------------------------ 13. Grades */
