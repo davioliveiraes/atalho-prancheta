@@ -1,6 +1,6 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { AuthScreen } from "../components/AuthScreen";
-import { ErrorLine, PasswordInput } from "../components/elements";
+import { ErrorLine, NoticeLine, PasswordInput } from "../components/elements";
 import { ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Link, navigate } from "../lib/router";
@@ -13,6 +13,15 @@ export function EntrarPage() {
   const [error, setError] = useState<ApiError | null>(null);
   const [busy, setBusy] = useState(false);
   const mobile = useIsMobile();
+
+  // Quem chega da redefinição de senha traz `?senha=redefinida`. Lido uma vez
+  // e tirado da barra: recarregar a página não deve repetir a notícia.
+  const [reset] = useState(
+    () => new URLSearchParams(window.location.search).get("senha") === "redefinida",
+  );
+  useEffect(() => {
+    if (window.location.search) window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -46,6 +55,7 @@ export function EntrarPage() {
     >
       <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
         {message && <ErrorLine>{message}</ErrorLine>}
+        {!message && reset && <NoticeLine>Senha redefinida. Entre com a senha nova.</NoticeLine>}
 
         <div className="field">
           <label htmlFor="entrar-email">E-mail</label>
@@ -64,7 +74,12 @@ export function EntrarPage() {
         </div>
 
         <div className="field">
-          <label htmlFor="entrar-senha">Senha</label>
+          <div className="field-head">
+            <label htmlFor="entrar-senha">Senha</label>
+            <Link className="field-link" to="/esqueci-a-senha">
+              Esqueceu a senha?
+            </Link>
+          </div>
           <PasswordInput
             id="entrar-senha"
             autoComplete="current-password"

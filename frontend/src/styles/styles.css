@@ -741,7 +741,8 @@ img {
   gap: 6px;
 }
 
-.field > label {
+.field > label,
+.field-head > label {
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 12px;
@@ -755,6 +756,26 @@ img {
   font-size: 12px;
   line-height: 16px;
   color: var(--ink-meta);
+}
+
+/* Rótulo com uma ação na outra ponta — o "Esqueceu a senha?" do login. A ação
+   mora na linha do rótulo, e não abaixo do campo, porque é ali que quem empacou
+   na senha olha: no nome do campo que não consegue preencher. */
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.field-link {
+  font-size: 13px;
+  line-height: 16px;
+  color: var(--ink-small);
+}
+
+.field-link:hover {
+  color: var(--ink-body);
 }
 
 .input {
@@ -832,6 +853,24 @@ img {
 
 .form-error svg {
   flex: none;
+}
+
+/* O par da linha de erro, para o que deu certo: mesmo desenho, tinta do
+   kicker. Nenhuma cor nova — o verde de "sucesso" não existe neste sistema. */
+.form-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0;
+  color: var(--color-accent-700);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.form-notice svg {
+  flex: none;
+  /* Alinha o ícone à primeira linha quando a mensagem quebra em duas. */
+  margin-top: 2px;
 }
 
 /* ---------------------------------------------------------- 8. Segmentado */

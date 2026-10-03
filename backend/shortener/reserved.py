@@ -22,6 +22,8 @@ RESERVED_CODES = frozenset(
         "links",
         "entrar",
         "criar-conta",
+        "esqueci-a-senha",
+        "redefinir-senha",
         "como-usar",
         "referencia",
         "api",

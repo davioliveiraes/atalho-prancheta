@@ -5,7 +5,7 @@
 [![Django](https://img.shields.io/badge/Django-6.0.8-green.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-248%20passing-brightgreen.svg)](https://github.com/davioliveiraes/atalho-prancheta)
+[![Tests](https://img.shields.io/badge/Tests-272%20passing-brightgreen.svg)](https://github.com/davioliveiraes/atalho-prancheta)
 
 Encurtador de links com contagem de cliques. A diferença está no que acontece
 depois: **o código divulgado nunca muda, e o destino por trás dele pode ser
@@ -30,6 +30,7 @@ Redis 8 · React 19 · TypeScript · Vite 8 · Docker
 - **Expiração por data** e **limite de visitantes**; fechado, o link avisa sem revelar o destino
 - **QR Code** gerado no servidor, apontando para o link curto
 - **Contas com JWT**, busca, filtros e resumo de cliques no painel
+- **Redefinição de senha por e-mail**, com link de uso único que encerra as sessões abertas
 - **Tema claro e escuro**, começando pelo do sistema e guardando a escolha
 
 ---
@@ -74,6 +75,7 @@ JSON, com autenticação por JWT no cabeçalho `Authorization: Bearer <access>`.
 | GET | `/api/urls/{codigo}/statistics/` · `/qrcode/` | números e QR Code | dono |
 | POST | `/api/auth/register/` · `/login/` · `/refresh/` | conta e tokens | aberto |
 | POST · GET | `/api/auth/logout/` · `/me/` | encerra e identifica a sessão | token |
+| POST | `/api/auth/password-reset/` · `/confirm/` | pede o link por e-mail e troca a senha | aberto |
 
 ```bash
 curl -X POST http://localhost:8000/api/urls/ \
@@ -92,8 +94,8 @@ Criar link tem teto — 20 por hora sem conta e 120 com conta, ajustáveis no
 docker compose run --rm backend python manage.py test
 ```
 
-173 testes cobrindo models, serializers, views, permissões, contas, o teto de
-criação, os comandos e a rota curta.
+272 testes cobrindo models, serializers, views, permissões, contas, a
+redefinição de senha, o teto de criação, os comandos e a rota curta.
 
 ---
 

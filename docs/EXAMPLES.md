@@ -125,6 +125,49 @@ GET {{api_url}}/auth/me/
 Authorization: Bearer {{access_token}}
 ```
 
+### 7. Esqueceu a senha
+
+```http
+POST {{api_url}}/auth/password-reset/
+Content-Type: application/json
+
+{
+    "email": "voce@exemplo.com"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+    "detail": "Se houver uma conta com este e-mail, enviamos um link para redefinir a senha. Ele vale por 60 minutos."
+}
+```
+
+A resposta é a mesma exista ou não a conta. O link chega por e-mail no formato
+`https://seudominio/redefinir-senha#uid=OQ&token=dful56-ee36...`, e um mesmo
+endereço recebe no máximo um link a cada dois minutos.
+
+### 8. Trocar a senha pelo link
+
+```http
+POST {{api_url}}/auth/password-reset/confirm/
+Content-Type: application/json
+
+{
+    "uid": "OQ",
+    "token": "dful56-ee369d6249631bc9d923609c1353c6bf",
+    "password": "senha-nova-forte",
+    "password_confirm": "senha-nova-forte"
+}
+```
+
+**Response:** 204 No Content. A senha nova passa pelos mesmos validadores do
+cadastro, e todos os refresh da conta vão para a blacklist — quem estava dentro
+sai quando o access vencer.
+
+Link vencido, já usado ou adulterado responde 400 com `detail`. O link deixa de
+valer também quando a pessoa entra com a senha antiga depois de pedi-lo.
+
 ---
 
 ## 🔗 Criar URLs

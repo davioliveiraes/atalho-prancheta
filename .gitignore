@@ -66,3 +66,6 @@ frontend/dist/
 
 # Windows download metadata copied as regular files
 *:Zone.Identifier
+
+# Claude
+claude_resume.txt

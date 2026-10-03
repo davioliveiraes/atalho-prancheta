@@ -37,7 +37,7 @@ const ACCESS_LABEL: Record<Access, string> = {
 const GROUPS: Group[] = [
   {
     title: "Contas",
-    cell: "5 rotas",
+    cell: "7 rotas",
     note: "O access dura 30 minutos. O refresh vale 7 dias e é trocado a cada renovação — o anterior deixa de valer no mesmo instante.",
     routes: [
       {
@@ -69,6 +69,18 @@ const GROUPS: Group[] = [
         path: "/api/auth/me/",
         text: "A conta dona do token.",
         access: "token",
+      },
+      {
+        method: "POST",
+        path: "/api/auth/password-reset/",
+        text: "Manda por e-mail o link de redefinição. Campo: email. A resposta é a mesma exista ou não a conta, e um endereço recebe no máximo um link a cada dois minutos.",
+        access: "aberto",
+      },
+      {
+        method: "POST",
+        path: "/api/auth/password-reset/confirm/",
+        text: "Troca a senha com o uid e o token do link, mais password e password_confirm. O link vale uma vez só, e a troca encerra todas as sessões da conta.",
+        access: "aberto",
       },
     ],
   },

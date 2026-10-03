@@ -7,11 +7,16 @@ continua funcionando sem trocar o AUTH_USER_MODEL.
 """
 
 from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.models import update_last_login
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.settings import api_settings as jwt_settings
+
+from .password_reset import INVALID_LINK_MESSAGE, user_from_uid
 
 User = get_user_model()
 
@@ -139,8 +144,66 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         refresh = self.get_token(user)
 
+        # O `validate` do simplejwt faz isto, e este o substitui por inteiro —
+        # sem a linha, `UPDATE_LAST_LOGIN` ficava ligado no settings e nenhum
+        # login era registrado. Não é só o admin que lê o campo: o token de
+        # redefinição de senha o inclui, e é por ele que entrar mata um link de
+        # redefinição esquecido na caixa de entrada.
+        if jwt_settings.UPDATE_LAST_LOGIN:
+            update_last_login(None, user)
+
         return {
             "access": str(refresh.access_token),
             "refresh": str(refresh),
             "user": UserSerializer(user).data,
         }
+
+
+# Os dois abaixo também só validam: quem age é a view, com `password_reset.py`.
+# pylint: disable=abstract-method
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Pedido do link. Só o formato do e-mail é conferido — existir ou não, não."""
+
+    email = serializers.EmailField(max_length=EMAIL_MAX_LENGTH)
+
+    def validate_email(self, value):
+        return normalize_email(value)
+
+
+# pylint: disable=abstract-method
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    A troca em si: o `uid` e o `token` do link, e a senha nova duas vezes.
+
+    O link é conferido antes da senha. Num link morto não adianta apontar que a
+    senha é fraca — a pessoa corrigiria a senha e ouviria só depois que precisa
+    pedir outro e-mail.
+
+    Validações:
+        uid, token: precisam formar um link válido e dentro do prazo
+        password: passa pelos validadores do Django, comparada à própria conta
+        password_confirm: precisa ser igual a password
+    """
+
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True, style={"input_type": "password"})
+    password_confirm = serializers.CharField(write_only=True, style={"input_type": "password"})
+
+    def validate(self, attrs):
+        user = user_from_uid(attrs["uid"])
+        if user is None or not default_token_generator.check_token(user, attrs["token"]):
+            raise serializers.ValidationError({"detail": INVALID_LINK_MESSAGE}, code="invalid")
+
+        if attrs["password"] != attrs["password_confirm"]:
+            raise serializers.ValidationError({"password_confirm": "As senhas não conferem."})
+
+        # Com a conta em mãos, o validador de semelhança compara a senha nova ao
+        # e-mail e ao nome — o cadastro não tem como, a conta ainda não existe.
+        try:
+            validate_password(attrs["password"], user)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError({"password": list(error.messages)}) from error
+
+        attrs["user"] = user
+        return attrs

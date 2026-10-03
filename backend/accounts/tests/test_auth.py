@@ -105,6 +105,20 @@ class LoginTest(APITestCase):
         self.assertIn("refresh", response.data)  # type: ignore
         self.assertEqual(response.data["user"]["email"], "davi@exemplo.com")  # type: ignore
 
+    def test_login_records_the_last_login(self):
+        """
+        O `validate` próprio deixava UPDATE_LAST_LOGIN sem efeito. O campo
+        também entra no token de redefinição de senha.
+        """
+        self.assertIsNone(self.user.last_login)
+
+        self.client.post(
+            self.url, {"email": "davi@exemplo.com", "password": VALID_PASSWORD}, format="json"
+        )
+
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.last_login)
+
     def test_login_accepts_email_in_any_case(self):
         response = self.client.post(
             self.url, {"email": "DAVI@Exemplo.com", "password": VALID_PASSWORD}, format="json"

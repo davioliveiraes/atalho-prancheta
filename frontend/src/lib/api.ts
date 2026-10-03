@@ -8,6 +8,8 @@ import type {
   LinkStatisticsResponse,
   LoginPayload,
   Paginated,
+  PasswordResetConfirmPayload,
+  PasswordResetRequested,
   QrCodeResponse,
   RegisterPayload,
   UpdateLinkPayload,
@@ -224,6 +226,30 @@ export const authApi = {
   /** GET /api/auth/me/ */
   me(): Promise<AuthUser> {
     return request<AuthUser>("/auth/me/");
+  },
+
+  /*
+   * As duas rotas de redefinição vão sem token, como entrar e cadastrar. Não é
+   * só por não precisarem dele: um access vencido guardado no navegador faria
+   * o DRF responder 401 antes mesmo de olhar a rota, que é aberta.
+   */
+
+  /** POST /api/auth/password-reset/ — 200 com a mesma frase, exista ou não a conta */
+  requestPasswordReset(email: string): Promise<PasswordResetRequested> {
+    return request<PasswordResetRequested>("/auth/password-reset/", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+      anonymous: true,
+    });
+  },
+
+  /** POST /api/auth/password-reset/confirm/ — 204; derruba as sessões abertas da conta */
+  confirmPasswordReset(payload: PasswordResetConfirmPayload): Promise<void> {
+    return request<void>("/auth/password-reset/confirm/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      anonymous: true,
+    });
   },
 };
 

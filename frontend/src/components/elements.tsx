@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Copy, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Check, CircleCheck, Copy, Eye, EyeOff } from "lucide-react";
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { STATE_LABEL, STATE_TAG_CLASS } from "../lib/format";
 import type { LinkState } from "../types";
@@ -149,6 +149,19 @@ export function ErrorLine({ children }: { children: ReactNode }) {
   return (
     <p className="form-error" role="alert">
       <AlertCircle size={15} strokeWidth={1.5} />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/**
+ * O par da ErrorLine para o que deu certo. `status` e não `alert`: é notícia,
+ * não interrupção — o leitor de tela anuncia sem cortar o que estava lendo.
+ */
+export function NoticeLine({ children }: { children: ReactNode }) {
+  return (
+    <p className="form-notice" role="status">
+      <CircleCheck size={15} strokeWidth={1.5} aria-hidden="true" />
       <span>{children}</span>
     </p>
   );

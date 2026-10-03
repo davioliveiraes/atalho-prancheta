@@ -371,6 +371,69 @@ curl -so /dev/null -w '%{http_code}\n' https://seudominio.com.br
 O `Cache-Control` da resposta traz `no-store`: é o que garante que trocar o
 destino de um link tenha efeito no próximo acesso, inclusive para quem já
 clicou antes.
+
+---
+
+## 11. E-mail (redefinição de senha)
+
+O "Esqueceu a senha?" manda um link por e-mail. Sem servidor SMTP configurado
+a aplicação sobe normalmente, mas a mensagem é **impressa no log do backend em
+vez de enviada** — ninguém recebe nada. Em caso de aperto, dá para tirar o link
+de lá e entregar à pessoa:
+
+```bash
+docker compose -f docker-compose.prod.yml logs backend | grep redefinir-senha
+```
+
+### 11.1 Configurar
+
+Qualquer SMTP serve. Com o e-mail da própria Hostinger, crie uma caixa no
+painel (por exemplo `nao-responda@seudominio.com.br`) e preencha no `.env` da
+VPS:
+
+```bash
+EMAIL_HOST=smtp.hostinger.com
+EMAIL_PORT=465
+EMAIL_USE_SSL=True
+EMAIL_HOST_USER=nao-responda@seudominio.com.br
+EMAIL_HOST_PASSWORD=a-senha-da-caixa
+DEFAULT_FROM_EMAIL=Atalho Prancheta <nao-responda@seudominio.com.br>
+```
+
+Confira host e porta no painel do seu provedor — os valores acima são os da
+Hostinger. O remetente precisa ser a mesma caixa do `EMAIL_HOST_USER`: a maioria
+dos servidores recusa enviar em nome de outro endereço.
+
+O link do e-mail aponta para `https://${DOMAIN}`, lido do mesmo `DOMAIN` que o
+nginx usa. Ele nunca sai do `Host` da requisição: esse cabeçalho é escrito por
+quem pede, e um link montado a partir dele mandaria o token de outra pessoa para
+onde o atacante quisesse.
+
+Recarregue:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### 11.2 Conferir
+
+```bash
+# Manda uma mensagem de teste pelo SMTP configurado
+docker compose -f docker-compose.prod.yml exec backend \
+  python manage.py sendtestemail voce@seudominio.com.br
+```
+
+Se o comando travar até dar timeout, a VPS pode estar com a porta de saída
+bloqueada — algumas bloqueiam 25 e 465. Tente 587 com `EMAIL_USE_TLS=True` e
+`EMAIL_USE_SSL=False`.
+
+Se a mensagem cair no spam, falta autenticar o domínio: os registros SPF e DKIM
+que o provedor de e-mail indica vão no DNS do domínio, ao lado do `A`.
+
+> O envio acontece fora da requisição, numa thread. Uma falha de SMTP não
+> aparece para quem pediu — que vê a mesma resposta de sempre — e sim no log,
+> como `Falha ao enviar o e-mail de redefinição de senha`.
+
 ---
 
 ## Notas

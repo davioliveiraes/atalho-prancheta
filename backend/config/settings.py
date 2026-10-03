@@ -307,6 +307,10 @@ REST_FRAMEWORK = {
         # Criar link e a unica escrita aberta a quem nao tem conta.
         "link-create-anon": config("THROTTLE_LINK_ANON", default="20/hour"),
         "link-create-user": config("THROTTLE_LINK_USER", default="120/hour"),
+        # Pedir o link manda e-mail para um endereco que quem pede digitou: e
+        # por aqui que alguem lotaria a caixa de entrada de outra pessoa.
+        "auth-password-reset": config("THROTTLE_PASSWORD_RESET", default="5/hour"),
+        "auth-password-confirm": config("THROTTLE_PASSWORD_CONFIRM", default="30/hour"),
     },
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
@@ -335,6 +339,60 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
     "SIGNING_KEY": SECRET_KEY,
 }
+
+# Redefinicao de senha
+
+# O endereco da interface, para montar o link que vai no e-mail.
+#
+# Declarado, e nunca tirado do Host da requisicao: o Host e escrito por quem
+# pede, e um link montado a partir dele mandaria o token de outra pessoa para o
+# endereco que o atacante quisesse. Com o link por subdominio ligado isso nem
+# exige dominio proprio — `qualquer.seudominio.com.br` passa no ALLOWED_HOSTS.
+#
+# Em producao sai do DOMAIN que o nginx ja usa; em desenvolvimento, do Vite.
+DOMAIN = config("DOMAIN", default="").strip().lower()
+SITE_URL = config(
+    "SITE_URL",
+    default=f"https://{DOMAIN}" if DOMAIN else "http://localhost:5173",
+).rstrip("/")
+
+# Quanto tempo o link vale. O padrao do Django e de tres dias, longo demais
+# para um link que abre a conta inteira a quem tiver o e-mail na mao.
+PASSWORD_RESET_TIMEOUT = config("PASSWORD_RESET_MINUTES", default=60, cast=int) * 60
+
+# O e-mail sai fora da requisicao, numa thread: SMTP leva segundos, e uma
+# resposta mais lenta so quando a conta existe contaria a quem pergunta quais
+# e-mails tem conta aqui. Nos testes sai na hora, para a caixa de saida do
+# Django ja estar preenchida quando a assercao olhar.
+PASSWORD_RESET_EMAIL_IN_BACKGROUND = not RUNNING_TESTS
+
+# E-mail
+
+# Sem EMAIL_HOST, a mensagem e impressa no log do backend em vez de enviada — e
+# o que permite testar a redefinicao em desenvolvimento sem servidor nenhum, e o
+# que deixa a producao de pe enquanto o SMTP nao estiver configurado.
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.smtp.EmailBackend"
+        if EMAIL_HOST
+        else "django.core.mail.backends.console.EmailBackend"
+    ),
+)
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+# 587 fala STARTTLS; 465 fala TLS desde o primeiro byte. Um ou outro, nunca os
+# dois — o Django recusa o envio com os dois ligados. Por isso o padrao de um e o
+# contrario do outro: quem so declara EMAIL_USE_SSL=True nao tropeca no TLS.
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=not EMAIL_USE_SSL, cast=bool)
+EMAIL_TIMEOUT = 15
+DEFAULT_FROM_EMAIL = config(
+    "DEFAULT_FROM_EMAIL",
+    default=f"Atalho Prancheta <nao-responda@{DOMAIN or 'localhost'}>",
+)
 
 if not DEBUG:
     # O desvio de http para https e feito pelo nginx, antes da requisicao chegar

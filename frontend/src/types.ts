@@ -130,3 +130,16 @@ export interface LoginPayload {
   email: string;
   password: string;
 }
+
+/** Corpo de /auth/password-reset/ — a mesma frase com e sem conta */
+export interface PasswordResetRequested {
+  detail: string;
+}
+
+/** Campos aceitos por PasswordResetConfirmSerializer; `uid` e `token` vêm do link do e-mail */
+export interface PasswordResetConfirmPayload {
+  uid: string;
+  token: string;
+  password: string;
+  password_confirm: string;
+}

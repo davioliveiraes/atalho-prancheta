@@ -8,8 +8,10 @@ import { ComoUsarPage } from "./pages/ComoUsarPage";
 import { CriarContaPage } from "./pages/CriarContaPage";
 import { DetailPage } from "./pages/DetailPage";
 import { EntrarPage } from "./pages/EntrarPage";
+import { EsqueciSenhaPage } from "./pages/EsqueciSenhaPage";
 import { LandingPage } from "./pages/LandingPage";
 import { PanelPage } from "./pages/PanelPage";
+import { RedefinirSenhaPage } from "./pages/RedefinirSenhaPage";
 
 function resolve(pathname: string) {
   const segments = pathname.replace(/\/+$/, "").split("/").filter(Boolean);
@@ -47,6 +49,18 @@ function resolve(pathname: string) {
         </GuestOnly>
       );
     }
+    // Os dois nomes abaixo estão em `shortener/reserved.py` — mais o nginx e o
+    // Vite —, senão a raiz os entregaria ao backend como código de link.
+    if (segments[0] === "esqueci-a-senha") {
+      return (
+        <GuestOnly>
+          <EsqueciSenhaPage />
+        </GuestOnly>
+      );
+    }
+    // Sem GuestOnly: quem desconfia que alguém entrou na conta pode estar
+    // logado quando abre o link. Ver o docstring da página.
+    if (segments[0] === "redefinir-senha") return <RedefinirSenhaPage />;
   }
 
   if (segments.length === 2 && segments[0] === "painel" && segments[1] === "fichas") {

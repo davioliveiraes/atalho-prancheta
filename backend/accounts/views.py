@@ -6,6 +6,8 @@ Endpoints de conta.
     - POST /api/auth/refresh/   - renova o access a partir do refresh
     - POST /api/auth/logout/    - invalida o refresh recebido
     - GET  /api/auth/me/        - conta do token atual
+    - POST /api/auth/password-reset/          - manda o link de redefinição
+    - POST /api/auth/password-reset/confirm/  - troca a senha pelo link
 """
 
 from rest_framework import generics, status
@@ -18,7 +20,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .authentication import invalid_token
-from .serializers import EmailTokenObtainPairSerializer, RegisterSerializer, UserSerializer
+from .password_reset import request_message, request_reset, revoke_sessions
+from .serializers import (
+    EmailTokenObtainPairSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 
 def token_pair(user):
@@ -108,3 +117,47 @@ class MeView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class PasswordResetRequestView(APIView):
+    """
+    Pede o link de redefinição.
+
+    Responde 200 com a mesma frase exista ou não a conta, e no mesmo tempo: o
+    e-mail sai fora da requisição (ver PASSWORD_RESET_EMAIL_IN_BACKGROUND).
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth-password-reset"
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        request_reset(serializer.validated_data["email"])  # type: ignore[index]
+        return Response({"detail": request_message()})
+
+
+class PasswordResetConfirmView(APIView):
+    """
+    Troca a senha com o `uid` e o `token` do link.
+
+    Aberta: quem chega aqui, por definição, não consegue entrar. Responde 204 e
+    não devolve tokens — a interface manda para a tela de entrar, e a primeira
+    coisa feita com a senha nova é usá-la.
+    """
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth-password-confirm"
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data["user"]  # type: ignore[index]
+        user.set_password(serializer.validated_data["password"])  # type: ignore[index]
+        user.save(update_fields=["password"])
+        revoke_sessions(user)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

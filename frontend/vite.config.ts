@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
         // O link curto mora na raiz: `/{apelido}` vai para o backend, o resto
         // continua sendo tela. O padrão inteiro sai de `shortlink_path_regex()`,
         // em `backend/shortener/slugs.py`.
-        [`^/(?!(?:admin|api|como-usar|criar-conta|entrar|links|media|painel|r|referencia|static)/?$)[A-Za-z0-9](?:[A-Za-z0-9-]{1,30}[A-Za-z0-9])?/?$`]:
+        [`^/(?!(?:admin|api|como-usar|criar-conta|entrar|esqueci-a-senha|links|media|painel|r|redefinir-senha|referencia|static)/?$)[A-Za-z0-9](?:[A-Za-z0-9-]{1,30}[A-Za-z0-9])?/?$`]:
           proxyRule,
       },
     },
