@@ -1,4 +1,4 @@
-import { AlertCircle, Check, CircleCheck, Copy, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, Check, CircleCheck, Copy, Eye, EyeOff, RotateCw } from "lucide-react";
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { STATE_LABEL, STATE_TAG_CLASS } from "../lib/format";
 import type { LinkState } from "../types";
@@ -53,6 +53,60 @@ export function CopyButton({
     >
       {copied ? <Check size={15} strokeWidth={1.5} /> : <Copy size={15} strokeWidth={1.5} />}
       {copied ? "Copiado" : label}
+    </button>
+  );
+}
+
+/** Menor tempo de giro do ícone de atualizar — ver RefreshButton. */
+const REFRESH_MIN_MS = 500;
+
+/**
+ * Botão de atualizar: busca os dados de novo sem sair da tela.
+ *
+ * O ícone gira enquanto a busca corre, e por pelo menos meio segundo. Em
+ * desenvolvimento a resposta volta em dezenas de milissegundos, e um giro de um
+ * quadro só não se distingue de um clique que não fez nada. O dado novo já está
+ * na tela quando o giro acaba — a espera é só do ícone, nunca da informação.
+ *
+ * Não usa `disabled`: a folha apaga o botão desabilitado para 45%, e um ícone
+ * girando apagado lê como erro. O clique repetido durante a busca é ignorado
+ * aqui dentro, e `aria-busy` conta ao leitor de tela que há trabalho em curso.
+ */
+export function RefreshButton({
+  onRefresh,
+  label = "Atualizar",
+}: {
+  onRefresh: () => Promise<void>;
+  label?: string;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function run() {
+    if (busy) return;
+    setBusy(true);
+    await Promise.all([
+      // A falha não é deste botão: quem chama já mostra o próprio estado de erro.
+      onRefresh().catch(() => undefined),
+      new Promise((resolve) => window.setTimeout(resolve, REFRESH_MIN_MS)),
+    ]);
+    setBusy(false);
+  }
+
+  return (
+    <button
+      type="button"
+      className="btn btn-icon btn-secondary"
+      aria-label={label}
+      title={label}
+      aria-busy={busy}
+      onClick={() => void run()}
+    >
+      <RotateCw
+        size={16}
+        strokeWidth={1.5}
+        aria-hidden="true"
+        className={busy ? "spin" : undefined}
+      />
     </button>
   );
 }

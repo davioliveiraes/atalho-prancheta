@@ -30,10 +30,10 @@ function features(subdomainBase: string | null) {
       text: "Trocar o destino não mexe no endereço divulgado. O desvio é temporário e vai sem cache: o próximo acesso já cai no lugar novo, inclusive o de quem já clicou antes.",
     },
     {
-      title: "Endereço escolhido",
+      title: "Nome escolhido",
       text: subdomainBase
-        ? "Em vez do código sorteado, escolha o seu — letras sem acento, números e hífen. E o mesmo link ainda pode ganhar um subdomínio como segundo endereço."
-        : "Em vez do código sorteado de seis caracteres, escolha o seu: letras sem acento, números e hífen, de 3 a 32 caracteres.",
+        ? "Em vez do código sorteado, dê ao link o nome que quiser — letras sem acento, números e hífen. Ele não muda depois, e ainda pode ganhar um subdomínio como segundo endereço."
+        : "Em vez do código sorteado de seis caracteres, dê ao link o nome que quiser: letras sem acento, números e hífen, de 3 a 32 caracteres. O nome não muda depois — o destino, sim.",
     },
     {
       title: "Expiração e limite",
@@ -213,8 +213,7 @@ export function LandingPage() {
                 Personalizar o link
               </button>
               <span style={{ fontSize: 13, lineHeight: "20px", color: "var(--ink-meta)" }}>
-                código personalizado{subdomainBase ? " · subdomínio" : ""} · expiração · limite de
-                cliques
+                nome do link{subdomainBase ? " · subdomínio" : ""} · expiração · limite de cliques
               </span>
             </div>
           </div>

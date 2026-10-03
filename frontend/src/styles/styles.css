@@ -733,6 +733,27 @@ img {
   width: 100%;
 }
 
+/* Giro do ícone de atualizar. A primeira animação da folha: o sistema é de
+   desenho parado, e movimento aqui só marca trabalho em andamento. */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 800ms linear infinite;
+}
+
+/* Quem pediu menos movimento ao sistema operacional não vê o ícone girar: ele
+   fica esmaecido enquanto a busca corre, e o `aria-busy` diz o mesmo em voz. */
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
 /* --------------------------------------------------------------- 7. Campos */
 
 .field {
@@ -961,6 +982,12 @@ img {
 
 .table tbody tr:hover {
   background: var(--color-hover);
+}
+
+/* Linha que leva a algum lugar: a mão aparece em qualquer ponto dela, e não só
+   no código. O destino do clique é decidido na tela (ver Row, no painel). */
+.table tbody tr.row-link {
+  cursor: pointer;
 }
 
 .table .num {

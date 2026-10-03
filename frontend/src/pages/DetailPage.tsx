@@ -14,6 +14,7 @@ import {
   formatDateShort,
   formatDateTime,
   formatNumber,
+  hostOf,
   linkState,
   toDateTimeLocal,
 } from "../lib/format";
@@ -629,6 +630,22 @@ function EditDialog({
       }
     >
       <form id="edit-link-form" className="dialog-body" onSubmit={submit}>
+        {/* O nome aparece, mas não é campo: é o endereço já divulgado — em
+            mensagem, em QR Code impresso —, e trocá-lo tiraria tudo isso do ar.
+            A API recusa a troca; a tela não oferece. */}
+        <div className="field">
+          <span className="label">Nome do link</span>
+          <div
+            className="code break"
+            style={{ fontSize: 18, lineHeight: "24px", padding: "6px 0" }}
+          >
+            {hostOf(link.short_url)}
+          </div>
+          <span className="field-hint">
+            Não muda. Para outro nome, crie outro link.
+          </span>
+        </div>
+
         <div className="field">
           <label htmlFor="edit-url">Destino</label>
           <input
@@ -640,9 +657,14 @@ function EditDialog({
             required
             value={originalUrl}
             aria-invalid={error?.field("original_url") ? true : undefined}
+            aria-describedby="edit-url-hint"
             onChange={(event) => setOriginalUrl(event.target.value)}
           />
           {error?.field("original_url") && <ErrorLine>{error.field("original_url")}</ErrorLine>}
+          <span className="field-hint" id="edit-url-hint">
+            Quem já tem o link — ou o QR Code impresso — passa a cair no destino novo no próximo
+            acesso.
+          </span>
         </div>
 
         {subdomainBase && (

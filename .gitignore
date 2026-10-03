@@ -69,3 +69,5 @@ frontend/dist/
 
 # Claude
 claude_resume.txt
+# Permissões pessoais do Claude Code nesta máquina — não vão para o repositório.
+.claude/settings.local.json

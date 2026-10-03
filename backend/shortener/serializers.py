@@ -257,7 +257,9 @@ class ShortenedURLCreateSerializer(serializers.ModelSerializer):
         validators=[
             UniqueValidator(
                 queryset=ShortenedURL.objects.all(),
-                message="Este codigo curto ja esta em uso. Escolha outro.",
+                # A tela chama de "nome do link"; a mensagem acompanha o rotulo
+                # que a pessoa esta olhando quando ela aparece.
+                message="Este nome ja esta em uso por outro link. Escolha outro.",
             )
         ],
         help_text="Apelido do caminho (opcional; sorteado quando nao informado)",

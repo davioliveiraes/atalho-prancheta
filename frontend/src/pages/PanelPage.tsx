@@ -1,8 +1,8 @@
 import { Copy, Pencil, Power, QrCode, Search, Trash2 } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { type MouseEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import { NewLinkDialog } from "../components/NewLinkDialog";
 import { QrDialog } from "../components/QrDialog";
-import { StateTag } from "../components/elements";
+import { RefreshButton, StateTag } from "../components/elements";
 import { Plate } from "../components/Plate";
 import { ApiError, linkApi } from "../lib/api";
 import { formatDateShort, formatNumber, hostOf, linkState } from "../lib/format";
@@ -58,8 +58,15 @@ export function PanelPage() {
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  /**
+   * `quiet` troca os números no lugar, sem o esqueleto. É o caso do botão de
+   * atualizar: a lista é a mesma, só os valores mudam, e piscar a tabela
+   * inteira para trocar uma contagem de cliques faria a pessoa perder a linha
+   * que estava olhando. Filtro, busca e página continuam com o esqueleto,
+   * porque ali o conjunto de linhas é outro.
+   */
+  const load = useCallback(async (options?: { quiet?: boolean }) => {
+    if (!options?.quiet) setLoading(true);
     setError(null);
     const params = { search: term, isActive: STATUS_QUERY[status] };
     try {
@@ -79,6 +86,11 @@ export function PanelPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Silencioso só com algo na tela para manter. Saindo de um erro, não há
+  // lista a preservar, e sem o esqueleto a tela mostraria "Nenhum link ainda"
+  // enquanto a resposta não chega.
+  const refresh = () => load({ quiet: !!data && !error });
 
   const items = data?.results ?? [];
   const total = data?.count ?? 0;
@@ -109,11 +121,16 @@ export function PanelPage() {
             )}
           </h2>
         </div>
-        {!mobile && (
-          <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
-            Novo link
-          </button>
-        )}
+        {/* No cabeçalho, ao lado das somas que ele também atualiza. No mobile
+            o "Novo" mora na barra de cima, e o botão fica sozinho aqui. */}
+        <div style={{ display: "flex", gap: 8, flex: "none" }}>
+          <RefreshButton onRefresh={refresh} label="Atualizar os links" />
+          {!mobile && (
+            <button type="button" className="btn btn-primary" onClick={() => setCreating(true)}>
+              Novo link
+            </button>
+          )}
+        </div>
       </header>
 
       {/* 1h: a busca vive atrás do botão da nav e abre num campo de 48px. */}
@@ -475,12 +492,36 @@ function Row({
   onQr: (code: string) => void;
 }) {
   const state = linkState(item);
+  const href = `/links/${item.short_code}`;
+
+  /**
+   * A linha inteira leva ao detalhe, e não só o código.
+   *
+   * O código continua sendo o `<Link>` de verdade: é ele que o teclado e o
+   * leitor de tela encontram, e a linha não ganha um segundo ponto de foco
+   * repetindo o mesmo destino. O clique na linha é atalho para o mouse.
+   *
+   * Dois cliques não são da linha: os que caem num botão ou link — as ações
+   * e o próprio código já fazem o deles —, e o que termina uma seleção de
+   * texto. Quem arrasta sobre o destino para copiá-lo não quer sair da tela.
+   */
+  function openDetail(event: MouseEvent<HTMLTableRowElement>) {
+    if ((event.target as HTMLElement).closest("a, button")) return;
+    if (window.getSelection()?.toString()) return;
+
+    // Ctrl ou Cmd abre em outra aba, como faria no código.
+    if (event.ctrlKey || event.metaKey) {
+      window.open(href, "_blank", "noopener");
+      return;
+    }
+    navigate(href);
+  }
 
   return (
-    <tr data-inactive={state === "inactive"}>
+    <tr className="row-link" data-inactive={state === "inactive"} onClick={openDetail}>
       <td>
         <Link
-          to={`/links/${item.short_code}`}
+          to={href}
           style={{
             fontFamily: "var(--font-heading)",
             fontWeight: 600,

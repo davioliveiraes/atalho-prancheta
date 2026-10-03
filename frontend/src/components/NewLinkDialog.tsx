@@ -97,8 +97,40 @@ export function NewLinkDialog({
       <form id="new-link-form" className="dialog-body" onSubmit={submit}>
         {looseError && <ErrorLine>{looseError}</ErrorLine>}
 
+        {/* O nome vem primeiro: é o que se divulga, e a única parte do link que
+            não muda depois. O destino, logo abaixo, é o contrário. Na API o
+            nome é o `short_code`; na tabela do painel, a coluna "Código". */}
         <div className="field">
-          <label htmlFor="f-url">URL original</label>
+          <label htmlFor="f-code">
+            Nome do link{" "}
+            <span style={{ color: "var(--ink-disabled)" }}>
+              — opcional, sorteamos 6 caracteres se vazio
+            </span>
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+            <Affix side="left">{codePrefix()}</Affix>
+            <input
+              id="f-code"
+              className="input"
+              type="text"
+              maxLength={SLUG_MAX_LENGTH}
+              placeholder="grupowhatsempresa"
+              value={shortCode}
+              aria-invalid={error?.field("short_code") ? true : undefined}
+              aria-describedby="f-code-hint"
+              style={error?.field("short_code") ? ERROR_BORDER : undefined}
+              onChange={(event) => setShortCode(event.target.value)}
+            />
+          </div>
+          {error?.field("short_code") && <ErrorLine>{error.field("short_code")}</ErrorLine>}
+          <span className="field-hint" id="f-code-hint">
+            O endereço que você divulga. Depois de criado ele não muda — outro nome, só criando
+            outro link. {SLUG_HINT}
+          </span>
+        </div>
+
+        <div className="field">
+          <label htmlFor="f-url">Destino</label>
           {/* Ver o campo equivalente da home: `url` recusaria endereço sem
               esquema, que é a forma que se cola do navegador. */}
           <input
@@ -111,34 +143,15 @@ export function NewLinkDialog({
             placeholder="https://exemplo.com/pagina"
             value={originalUrl}
             aria-invalid={error?.field("original_url") ? true : undefined}
+            aria-describedby="f-url-hint"
             style={error?.field("original_url") ? ERROR_BORDER : undefined}
             onChange={(event) => setOriginalUrl(event.target.value)}
           />
           {error?.field("original_url") && <ErrorLine>{error.field("original_url")}</ErrorLine>}
-        </div>
-
-        <div className="field">
-          <label htmlFor="f-code">
-            Código curto{" "}
-            <span style={{ color: "var(--ink-disabled)" }}>
-              — opcional, gerado com 6 caracteres se vazio
-            </span>
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-            <Affix side="left">{codePrefix()}</Affix>
-            <input
-              id="f-code"
-              className="input"
-              type="text"
-              maxLength={SLUG_MAX_LENGTH}
-              value={shortCode}
-              aria-invalid={error?.field("short_code") ? true : undefined}
-              style={error?.field("short_code") ? ERROR_BORDER : undefined}
-              onChange={(event) => setShortCode(event.target.value)}
-            />
-          </div>
-          {error?.field("short_code") && <ErrorLine>{error.field("short_code")}</ErrorLine>}
-          <span className="field-hint">{SLUG_HINT}</span>
+          <span className="field-hint" id="f-url-hint">
+            Para onde o link leva. Pode ser trocado quando quiser, sem mudar o nome — dá para
+            criar agora apontando para uma página provisória e corrigir depois.
+          </span>
         </div>
 
         {/* Só existe onde a instalação serve subdomínio — ver /api/config/. */}
