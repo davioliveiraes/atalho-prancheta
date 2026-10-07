@@ -49,7 +49,9 @@ class SubdomainField(SlugField):
         self.validators.append(
             UniqueValidator(
                 queryset=ShortenedURL.objects.all(),
-                message="Este subdominio ja esta em uso. Escolha outro.",
+                # Onde o subdominio esta ligado, e ele que a tela chama de "nome
+                # do link"; o codigo do caminho vira o "endereco fixo".
+                message="Este nome ja esta em uso por outro link. Escolha outro.",
             )
         )
         self.validators.append(_validate_subdomain_not_reserved)
@@ -71,9 +73,7 @@ def _validate_subdomain_not_reserved(value):
     deixaria o próprio site inalcançável.
     """
     if is_reserved_subdomain(value):
-        raise serializers.ValidationError(
-            "Este subdominio e reservado pela aplicacao. Escolha outro."
-        )
+        raise serializers.ValidationError("Este nome e reservado pela aplicacao. Escolha outro.")
     return value
 
 
@@ -257,9 +257,9 @@ class ShortenedURLCreateSerializer(serializers.ModelSerializer):
         validators=[
             UniqueValidator(
                 queryset=ShortenedURL.objects.all(),
-                # A tela chama de "nome do link"; a mensagem acompanha o rotulo
-                # que a pessoa esta olhando quando ela aparece.
-                message="Este nome ja esta em uso por outro link. Escolha outro.",
+                # "Endereco", e nao "codigo" nem "nome": o campo aparece com o
+                # `dominio/` na frente, e e isso que a pessoa esta olhando.
+                message="Este endereco ja esta em uso por outro link. Escolha outro.",
             )
         ],
         help_text="Apelido do caminho (opcional; sorteado quando nao informado)",

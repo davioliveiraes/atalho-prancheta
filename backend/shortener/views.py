@@ -106,8 +106,12 @@ class ShortenedURLViewSet(viewsets.ModelViewSet):
 
         search = self.request.query_params.get("search")  # type: ignore
         if search:
+            # O subdominio entra porque, onde ele esta ligado, e o nome pelo qual
+            # a pessoa conhece o link — e o que ela digita na busca.
             queryset = queryset.filter(
-                Q(short_code__icontains=search) | Q(original_url__icontains=search)
+                Q(short_code__icontains=search)
+                | Q(subdomain__icontains=search)
+                | Q(original_url__icontains=search)
             )
 
         return queryset.order_by("-created_at")

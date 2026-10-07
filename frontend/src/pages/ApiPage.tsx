@@ -116,7 +116,7 @@ const GROUPS: Group[] = [
       {
         method: "PATCH",
         path: "/api/urls/{codigo}/",
-        text: "Altera destino, subdomínio, estado, expiração e limite. Código curto e contadores de clique não se alteram por aqui.",
+        text: "Altera destino, subdomínio (o nome do link — vazio o remove, e o nome antigo deixa de responder), estado, expiração e limite. Código curto e contadores de clique não se alteram: o código é o endereço fixo, o do QR Code.",
         access: "dono",
       },
       {

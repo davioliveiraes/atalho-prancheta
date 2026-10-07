@@ -1,11 +1,12 @@
 import { QrCode } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { ApiError, linkApi, subdomainPreview } from "../lib/api";
+import { ApiError, linkApi } from "../lib/api";
 import { SLUG_HINT, SLUG_MAX_LENGTH } from "../lib/format";
 import { useSubdomainBase } from "../lib/siteConfig";
 import type { CreateLinkPayload, LinkDetail } from "../types";
 import { Dialog } from "./Dialog";
 import { Affix, ErrorLine } from "./elements";
+import { LinkNameField } from "./LinkNameField";
 
 /** Prefixo real do host: o que a API vai devolver em `short_url`. */
 function codePrefix() {
@@ -72,6 +73,75 @@ export function NewLinkDialog({
   const looseError =
     error && !Object.keys(error.fields).some((key) => FIELDS.includes(key)) ? error.message : null;
 
+  /*
+   * O código do caminho (`dominio/aB3xY9`) muda de papel conforme a instalação.
+   *
+   * Sem subdomínio, ele é o nome do link: o que se divulga, e por isso fixo.
+   * Com subdomínio, o nome passa a ser o subdomínio — que o dono troca quando
+   * quiser —, e o código vira o endereço fixo: nunca muda, e é para ele que o
+   * QR Code aponta. Na API é sempre o `short_code`.
+   */
+  const pathField = (
+    <div className="field">
+      <label htmlFor="f-code">
+        {subdomainBase ? "Endereço fixo" : "Nome do link"}{" "}
+        <span style={{ color: "var(--ink-disabled)" }}>
+          — opcional, sorteamos 6 caracteres se vazio
+        </span>
+      </label>
+      <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+        <Affix side="left">{codePrefix()}</Affix>
+        <input
+          id="f-code"
+          className="input"
+          type="text"
+          maxLength={SLUG_MAX_LENGTH}
+          placeholder={subdomainBase ? undefined : "grupowhatsempresa"}
+          value={shortCode}
+          aria-invalid={error?.field("short_code") ? true : undefined}
+          aria-describedby="f-code-hint"
+          style={error?.field("short_code") ? ERROR_BORDER : undefined}
+          onChange={(event) => setShortCode(event.target.value)}
+        />
+      </div>
+      {error?.field("short_code") && <ErrorLine>{error.field("short_code")}</ErrorLine>}
+      <span className="field-hint" id="f-code-hint">
+        {subdomainBase
+          ? "Nunca muda, e é para ele que o QR Code aponta — por isso o papel impresso sobrevive a uma troca de nome. "
+          : "O endereço que você divulga. Depois de criado ele não muda — outro nome, só criando outro link. "}
+        {SLUG_HINT}
+      </span>
+    </div>
+  );
+
+  const destinationField = (
+    <div className="field">
+      <label htmlFor="f-url">Destino</label>
+      {/* Ver o campo equivalente da home: `url` recusaria endereço sem
+          esquema, que é a forma que se cola do navegador. */}
+      <input
+        id="f-url"
+        className="input"
+        type="text"
+        inputMode="url"
+        autoComplete="url"
+        required
+        placeholder="https://exemplo.com/pagina"
+        value={originalUrl}
+        aria-invalid={error?.field("original_url") ? true : undefined}
+        aria-describedby="f-url-hint"
+        style={error?.field("original_url") ? ERROR_BORDER : undefined}
+        onChange={(event) => setOriginalUrl(event.target.value)}
+      />
+      {error?.field("original_url") && <ErrorLine>{error.field("original_url")}</ErrorLine>}
+      <span className="field-hint" id="f-url-hint">
+        {subdomainBase
+          ? "Para onde o link leva. Pode ser trocado quando quiser, assim como o nome — dá para criar agora apontando para uma página provisória e corrigir depois."
+          : "Para onde o link leva. Pode ser trocado quando quiser, sem mudar o nome — dá para criar agora apontando para uma página provisória e corrigir depois."}
+      </span>
+    </div>
+  );
+
   return (
     <Dialog
       open={open}
@@ -97,94 +167,32 @@ export function NewLinkDialog({
       <form id="new-link-form" className="dialog-body" onSubmit={submit}>
         {looseError && <ErrorLine>{looseError}</ErrorLine>}
 
-        {/* O nome vem primeiro: é o que se divulga, e a única parte do link que
-            não muda depois. O destino, logo abaixo, é o contrário. Na API o
-            nome é o `short_code`; na tabela do painel, a coluna "Código". */}
-        <div className="field">
-          <label htmlFor="f-code">
-            Nome do link{" "}
-            <span style={{ color: "var(--ink-disabled)" }}>
-              — opcional, sorteamos 6 caracteres se vazio
-            </span>
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-            <Affix side="left">{codePrefix()}</Affix>
-            <input
-              id="f-code"
-              className="input"
-              type="text"
-              maxLength={SLUG_MAX_LENGTH}
-              placeholder="grupowhatsempresa"
-              value={shortCode}
-              aria-invalid={error?.field("short_code") ? true : undefined}
-              aria-describedby="f-code-hint"
-              style={error?.field("short_code") ? ERROR_BORDER : undefined}
-              onChange={(event) => setShortCode(event.target.value)}
+        {/* O nome vem primeiro — é o que se divulga —, e depois o destino.
+            Qual campo é o nome depende da instalação: ver `pathField`. */}
+        {subdomainBase ? (
+          <>
+            <LinkNameField
+              id="f-subdomain"
+              base={subdomainBase}
+              value={subdomain}
+              onChange={setSubdomain}
+              error={error?.field("subdomain")}
+              optional
+              hint={
+                <>
+                  O endereço que você divulga. Dá para trocar depois — o QR Code não muda, porque
+                  aponta para o endereço fixo, mais abaixo. {SLUG_HINT}
+                </>
+              }
             />
-          </div>
-          {error?.field("short_code") && <ErrorLine>{error.field("short_code")}</ErrorLine>}
-          <span className="field-hint" id="f-code-hint">
-            O endereço que você divulga. Depois de criado ele não muda — outro nome, só criando
-            outro link. {SLUG_HINT}
-          </span>
-        </div>
-
-        <div className="field">
-          <label htmlFor="f-url">Destino</label>
-          {/* Ver o campo equivalente da home: `url` recusaria endereço sem
-              esquema, que é a forma que se cola do navegador. */}
-          <input
-            id="f-url"
-            className="input"
-            type="text"
-            inputMode="url"
-            autoComplete="url"
-            required
-            placeholder="https://exemplo.com/pagina"
-            value={originalUrl}
-            aria-invalid={error?.field("original_url") ? true : undefined}
-            aria-describedby="f-url-hint"
-            style={error?.field("original_url") ? ERROR_BORDER : undefined}
-            onChange={(event) => setOriginalUrl(event.target.value)}
-          />
-          {error?.field("original_url") && <ErrorLine>{error.field("original_url")}</ErrorLine>}
-          <span className="field-hint" id="f-url-hint">
-            Para onde o link leva. Pode ser trocado quando quiser, sem mudar o nome — dá para
-            criar agora apontando para uma página provisória e corrigir depois.
-          </span>
-        </div>
-
-        {/* Só existe onde a instalação serve subdomínio — ver /api/config/. */}
-        {subdomainBase && (
-          <div className="field">
-            <label htmlFor="f-subdomain">
-              Subdomínio{" "}
-              <span style={{ color: "var(--ink-disabled)" }}>
-                — opcional, um segundo endereço para o mesmo link
-              </span>
-            </label>
-            <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-              <input
-                id="f-subdomain"
-                className="input"
-                type="text"
-                maxLength={SLUG_MAX_LENGTH}
-                value={subdomain}
-                aria-invalid={error?.field("subdomain") ? true : undefined}
-                style={error?.field("subdomain") ? ERROR_BORDER : undefined}
-                onChange={(event) => setSubdomain(event.target.value)}
-              />
-              <Affix side="right">.{subdomainBase}</Affix>
-            </div>
-            {error?.field("subdomain") ? (
-              <ErrorLine>{error.field("subdomain")}</ErrorLine>
-            ) : (
-              <span className="field-hint">
-                {subdomainPreview(subdomainBase, subdomain.trim().toLowerCase()) ??
-                  `${SLUG_HINT} O link continua respondendo no endereço de cima.`}
-              </span>
-            )}
-          </div>
+            {destinationField}
+            {pathField}
+          </>
+        ) : (
+          <>
+            {pathField}
+            {destinationField}
+          </>
         )}
 
         <div className="grid grid-2" style={{ gap: 16 }}>

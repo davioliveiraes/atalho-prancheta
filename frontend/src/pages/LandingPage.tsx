@@ -2,11 +2,12 @@ import { ExternalLink, QrCode, SlidersHorizontal } from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import { NewLinkDialog } from "../components/NewLinkDialog";
 import { QrDialog } from "../components/QrDialog";
-import { Affix, CopyButton, ErrorLine } from "../components/elements";
+import { CopyButton, ErrorLine } from "../components/elements";
+import { LinkNameField } from "../components/LinkNameField";
 import { Plate } from "../components/Plate";
-import { ApiError, linkApi, redirectUrl, subdomainPreview } from "../lib/api";
+import { ApiError, linkApi, redirectUrl } from "../lib/api";
 import { useSession } from "../lib/auth";
-import { SLUG_HINT, SLUG_MAX_LENGTH, formatDateTime } from "../lib/format";
+import { SLUG_HINT, formatDateTime } from "../lib/format";
 import { Link } from "../lib/router";
 import { useSubdomainBase } from "../lib/siteConfig";
 import { useIsMobile } from "../lib/useIsMobile";
@@ -32,7 +33,7 @@ function features(subdomainBase: string | null) {
     {
       title: "Nome escolhido",
       text: subdomainBase
-        ? "Em vez do código sorteado, dê ao link o nome que quiser — letras sem acento, números e hífen. Ele não muda depois, e ainda pode ganhar um subdomínio como segundo endereço."
+        ? `Dê ao link um nome — wppdavi.${subdomainBase} — e troque quando quiser, junto com o destino. O endereço fixo, o do QR Code, não muda: o papel impresso sobrevive à troca.`
         : "Em vez do código sorteado de seis caracteres, dê ao link o nome que quiser: letras sem acento, números e hífen, de 3 a 32 caracteres. O nome não muda depois — o destino, sim.",
     },
     {
@@ -160,40 +161,23 @@ export function LandingPage() {
                   Fica abaixo da linha principal, e não dentro dela: quem veio
                   colar uma URL e apertar Enter continua com um campo só. */}
               {subdomainBase && (
-                <div className="field">
-                  <label htmlFor="landing-subdomain">
-                    Subdomínio{" "}
-                    <span style={{ color: "var(--ink-disabled)" }}>
-                      — opcional, um segundo endereço para o mesmo link
-                    </span>
-                  </label>
-                  <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-                    <input
-                      id="landing-subdomain"
-                      className="input"
-                      type="text"
-                      maxLength={SLUG_MAX_LENGTH}
-                      value={subdomain}
-                      aria-invalid={subdomainError ? true : undefined}
-                      style={{ minHeight: mobile ? 48 : 44 }}
-                      onChange={(event) => setSubdomain(event.target.value)}
-                    />
-                    <Affix side="right">.{subdomainBase}</Affix>
-                  </div>
-                  {subdomainError ? (
-                    <ErrorLine>{subdomainError}</ErrorLine>
-                  ) : (
-                    <span className="field-hint">
-                      {subdomainPreview(subdomainBase, subdomain.trim().toLowerCase()) ??
-                        (session
-                          ? SLUG_HINT
-                          : // Link criado sem conta não pertence a ninguém, e por
-                            // isso ninguém o edita depois. O nome escolhido aqui
-                            // fica como está.
-                            `${SLUG_HINT} Sem conta, o nome não pode ser trocado depois.`)}
-                    </span>
-                  )}
-                </div>
+                <LinkNameField
+                  id="landing-subdomain"
+                  base={subdomainBase}
+                  value={subdomain}
+                  onChange={setSubdomain}
+                  error={subdomainError}
+                  optional
+                  inputStyle={{ minHeight: mobile ? 48 : 44 }}
+                  hint={
+                    session
+                      ? `O endereço que você divulga. Nome e destino podem ser trocados depois, pelo painel. ${SLUG_HINT}`
+                      : // Link criado sem conta não pertence a ninguém, e por
+                        // isso ninguém o edita depois: nome e destino ficam
+                        // como estão.
+                        `O endereço que você divulga. Sem conta, nome e destino não podem ser trocados depois. ${SLUG_HINT}`
+                  }
+                />
               )}
             </form>
 
@@ -213,12 +197,17 @@ export function LandingPage() {
                 Personalizar o link
               </button>
               <span style={{ fontSize: 13, lineHeight: "20px", color: "var(--ink-meta)" }}>
-                nome do link{subdomainBase ? " · subdomínio" : ""} · expiração · limite de cliques
+                nome do link{subdomainBase ? " · endereço fixo" : ""} · expiração · limite de cliques
               </span>
             </div>
           </div>
 
-          <ResultPlate link={created} onQr={() => setQrOpen(true)} mobile={mobile} />
+          <ResultPlate
+            link={created}
+            onQr={() => setQrOpen(true)}
+            mobile={mobile}
+            subdomainBase={subdomainBase}
+          />
         </section>
       </div>
 
@@ -302,15 +291,22 @@ function ResultPlate({
   link,
   onQr,
   mobile,
+  subdomainBase,
 }: {
   link: LinkDetail | null;
   onQr: () => void;
   mobile: boolean;
+  subdomainBase: string | null;
 }) {
+  // Com nome (subdomínio), é ele o endereço principal — o que se copia e se
+  // divulga. O código do caminho vira o endereço fixo, o do QR Code.
+  const mainUrl = link ? (link.subdomain_url ?? link.short_url) : null;
+  const name = link ? (link.subdomain ?? link.short_code) : null;
+
   return (
     <Plate
-      // No mobile o cabeçalho é uma linha só: título e código na mesma célula.
-      title={mobile ? `Link criado${link ? ` · ${link.short_code}` : ""}` : "Link criado"}
+      // No mobile o cabeçalho é uma linha só: título e nome na mesma célula.
+      title={mobile ? `Link criado${name ? ` · ${name}` : ""}` : "Link criado"}
       cells={mobile ? undefined : [link ? "201" : "—"]}
       style={mobile ? { marginTop: 32 } : undefined}
     >
@@ -339,12 +335,12 @@ function ResultPlate({
               color: link ? "var(--color-text)" : "var(--ink-disabled)",
             }}
           >
-            {link ? link.short_url : "—"}
+            {mainUrl ?? "—"}
           </span>
         </div>
 
-        {/* O segundo endereço, quando o link nasceu com subdomínio. Só aparece
-            depois de criado — antes disso não há endereço nenhum a mostrar. */}
+        {/* O endereço fixo, quando o link nasceu com nome. Só aparece depois de
+            criado — antes disso não há endereço nenhum a mostrar. */}
         {link?.subdomain_url && (
           <div className="stack" style={{ gap: 6 }}>
             <span
@@ -357,7 +353,7 @@ function ResultPlate({
                 color: "var(--ink-small)",
               }}
             >
-              Também em
+              Endereço fixo · o do QR Code
             </span>
             <div
               style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}
@@ -366,11 +362,11 @@ function ResultPlate({
                 className="break"
                 style={{ fontSize: 15, lineHeight: "22px", color: "var(--ink-secondary)" }}
               >
-                {link.subdomain_url}
+                {link.short_url}
               </span>
               <CopyButton
-                value={link.subdomain_url}
-                ariaLabel="Copiar endereço de subdomínio"
+                value={link.short_url}
+                ariaLabel="Copiar endereço fixo"
                 height={mobile ? 44 : 30}
               />
             </div>
@@ -382,7 +378,7 @@ function ResultPlate({
           className={mobile ? "split-mobile" : undefined}
           style={{ display: "flex", flexWrap: "wrap", gap: 8 }}
         >
-          <CopyButton value={link?.short_url ?? ""} disabled={!link} height={mobile ? 44 : undefined} />
+          <CopyButton value={mainUrl ?? ""} disabled={!link} height={mobile ? 44 : undefined} />
           <button
             type="button"
             className="btn btn-secondary"
@@ -396,7 +392,7 @@ function ResultPlate({
           {!mobile && (
             <a
               className="btn btn-ghost"
-              href={link ? redirectUrl(link.short_code) : undefined}
+              href={link ? (link.subdomain_url ?? redirectUrl(link.short_code)) : undefined}
               target="_blank"
               rel="noreferrer"
               aria-disabled={!link || undefined}
@@ -422,8 +418,16 @@ function ResultPlate({
           <Row term="Destino">
             <span className="break">{link ? link.original_url : "—"}</span>
           </Row>
-          <Row term="Código">{link ? link.short_code : "—"}</Row>
-          <Row term="Subdomínio">{link?.subdomain ?? "—"}</Row>
+          {/* Os rótulos seguem o que a instalação chama de nome: o subdomínio,
+              onde ele existe, e o código do caminho, onde não. */}
+          {subdomainBase ? (
+            <>
+              <Row term="Nome">{link?.subdomain ?? "—"}</Row>
+              <Row term="Endereço fixo">{link ? `/${link.short_code}` : "—"}</Row>
+            </>
+          ) : (
+            <Row term="Nome">{link ? link.short_code : "—"}</Row>
+          )}
           <Row term="Expira em">{link ? formatDateTime(link.expires_at) : "—"}</Row>
           <Row term="Limite de cliques">
             {link ? (link.max_clicks ? String(link.max_clicks) : "Ilimitado") : "Ilimitado"}

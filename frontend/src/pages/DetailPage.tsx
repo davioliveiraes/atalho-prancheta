@@ -2,11 +2,11 @@ import { Copy, Download, Power, Trash2 } from "lucide-react";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import { Dialog } from "../components/Dialog";
 import { Plate } from "../components/Plate";
-import { Affix, CopyButton, ErrorLine, StateTag } from "../components/elements";
+import { CopyButton, ErrorLine, StateTag } from "../components/elements";
+import { LinkNameField } from "../components/LinkNameField";
 import { ApiError, linkApi } from "../lib/api";
 import { useSession } from "../lib/auth";
 import {
-  SLUG_MAX_LENGTH,
   STATE_LABEL,
   clicksByDay,
   formatDate,
@@ -124,31 +124,32 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
       >
         <Link to="/painel">Painel</Link>
         <span style={{ padding: "0 8px" }}>/</span>
-        <span>{detail.short_code}</span>
+        <span>{detail.subdomain ?? detail.short_code}</span>
       </nav>
 
       <header style={{ display: "flex", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
         <div className="stack" style={{ flex: 1, minWidth: 0, gap: 12 }}>
+          {/* Com nome (subdomínio), é ele o endereço em destaque — é o que se
+              divulga. O endereço fixo vem embaixo: leva ao mesmo destino, conta
+              o mesmo clique e é o que o QR Code carrega. */}
           <h2 className="break" style={{ fontSize: 44, lineHeight: "46px" }}>
-            {detail.short_url}
+            {detail.subdomain_url ?? detail.short_url}
           </h2>
 
-          {/* O segundo endereço, quando o link tem subdomínio. Os dois levam ao
-              mesmo destino e contam o mesmo clique. */}
           {detail.subdomain_url && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span style={{ fontSize: 13, lineHeight: "20px", color: "var(--ink-meta)" }}>
-                Também em
+                Endereço fixo
               </span>
               <span
                 className="break"
                 style={{ fontSize: 15, lineHeight: "22px", color: "var(--ink-secondary)" }}
               >
-                {detail.subdomain_url}
+                {detail.short_url}
               </span>
               <CopyButton
-                value={detail.subdomain_url}
-                ariaLabel="Copiar endereço de subdomínio"
+                value={detail.short_url}
+                ariaLabel="Copiar endereço fixo"
                 height={30}
               />
             </div>
@@ -170,7 +171,9 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
             type="button"
             className="btn btn-secondary"
             style={{ height: 38 }}
-            onClick={() => void navigator.clipboard?.writeText(detail.short_url)}
+            onClick={() =>
+              void navigator.clipboard?.writeText(detail.subdomain_url ?? detail.short_url)
+            }
           >
             <Copy size={15} strokeWidth={1.5} />
             Copiar
@@ -630,11 +633,28 @@ function EditDialog({
       }
     >
       <form id="edit-link-form" className="dialog-body" onSubmit={submit}>
-        {/* O nome aparece, mas não é campo: é o endereço já divulgado — em
-            mensagem, em QR Code impresso —, e trocá-lo tiraria tudo isso do ar.
-            A API recusa a troca; a tela não oferece. */}
+        {/* Com subdomínio, o nome é ele, e o dono o troca aqui. O código do
+            caminho aparece logo abaixo como endereço fixo: a API recusa trocá-lo,
+            e é para ele que o QR Code aponta. Sem subdomínio, o próprio código é
+            o nome — e por isso não muda. */}
+        {subdomainBase && (
+          <LinkNameField
+            id="edit-subdomain"
+            base={subdomainBase}
+            value={subdomain}
+            onChange={setSubdomain}
+            error={error?.field("subdomain")}
+            current={link.subdomain}
+            hint={
+              link.subdomain
+                ? "Dá para trocar. Vazio deixa o link só no endereço fixo."
+                : "Este link ainda não tem nome; ele responde só no endereço fixo."
+            }
+          />
+        )}
+
         <div className="field">
-          <span className="label">Nome do link</span>
+          <span className="label">{subdomainBase ? "Endereço fixo" : "Nome do link"}</span>
           <div
             className="code break"
             style={{ fontSize: 18, lineHeight: "24px", padding: "6px 0" }}
@@ -642,7 +662,9 @@ function EditDialog({
             {hostOf(link.short_url)}
           </div>
           <span className="field-hint">
-            Não muda. Para outro nome, crie outro link.
+            {subdomainBase
+              ? "Não muda — é para ele que o QR Code aponta."
+              : "Não muda. Para outro nome, crie outro link."}
           </span>
         </div>
 
@@ -666,32 +688,6 @@ function EditDialog({
             acesso.
           </span>
         </div>
-
-        {subdomainBase && (
-          <div className="field">
-            <label htmlFor="edit-subdomain">Subdomínio</label>
-            <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-              <input
-                id="edit-subdomain"
-                className="input"
-                type="text"
-                maxLength={SLUG_MAX_LENGTH}
-                placeholder="Sem subdomínio"
-                value={subdomain}
-                aria-invalid={error?.field("subdomain") ? true : undefined}
-                onChange={(event) => setSubdomain(event.target.value)}
-              />
-              <Affix side="right">.{subdomainBase}</Affix>
-            </div>
-            {error?.field("subdomain") ? (
-              <ErrorLine>{error.field("subdomain")}</ErrorLine>
-            ) : (
-              <span className="field-hint">
-                Vazio remove o subdomínio; o endereço de código continua valendo.
-              </span>
-            )}
-          </div>
-        )}
 
         <div className="field">
           <label htmlFor="edit-expires">Expira em</label>

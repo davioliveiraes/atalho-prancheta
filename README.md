@@ -5,7 +5,7 @@
 [![Django](https://img.shields.io/badge/Django-6.0.8-green.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-149eca.svg)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-272%20passing-brightgreen.svg)](https://github.com/davioliveiraes/atalho-prancheta)
+[![Tests](https://img.shields.io/badge/Tests-280%20passing-brightgreen.svg)](https://github.com/davioliveiraes/atalho-prancheta)
 
 Encurtador de links com contagem de cliques. A diferença está no que acontece
 depois: **o código divulgado nunca muda, e o destino por trás dele pode ser
@@ -25,7 +25,7 @@ Redis 8 · React 19 · TypeScript · Vite 8 · Docker
 
 - **Destino atualizável** sem alterar o atalho divulgado
 - **Endereço na raiz** — `seudominio.com/loja-natal`, com apelido gerado ou escolhido
-- **Endereço por subdomínio** — `loja-natal.seudominio.com` para o mesmo link (opcional)
+- **Nome por subdomínio** — `wppdavi.seudominio.com`, trocável junto com o destino; o endereço fixo `seudominio.com/codigo`, o do QR Code, nunca muda (opcional)
 - **Cliques totais e únicos** por IP, guardando navegador, origem e horário
 - **Expiração por data** e **limite de visitantes**; fechado, o link avisa sem revelar o destino
 - **QR Code** gerado no servidor, apontando para o link curto
@@ -94,7 +94,7 @@ Criar link tem teto — 20 por hora sem conta e 120 com conta, ajustáveis no
 docker compose run --rm backend python manage.py test
 ```
 
-272 testes cobrindo models, serializers, views, permissões, contas, a
+280 testes cobrindo models, serializers, views, permissões, contas, a
 redefinição de senha, o teto de criação, os comandos e a rota curta.
 
 ---

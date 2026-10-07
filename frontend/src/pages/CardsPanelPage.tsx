@@ -291,13 +291,14 @@ function Card({
               color: dataInk,
             }}
           >
-            {link.short_code}
+            {link.subdomain ?? link.short_code}
           </Link>
           <StateTag state={state} />
         </div>
 
-        {/* O segundo endereço do link, quando existe — o mesmo link, não outro. */}
-        {link.subdomain_url && (
+        {/* Com nome (subdomínio), o código vira o endereço fixo — o mesmo link,
+            não outro —, e fica embaixo, menor. Mesma regra da tabela. */}
+        {link.subdomain && (
           <p
             className="break"
             style={{
@@ -307,7 +308,7 @@ function Card({
               color: faded ? "var(--ink-disabled)" : "var(--ink-meta)",
             }}
           >
-            {hostOf(link.subdomain_url)}
+            {hostOf(link.short_url)}
           </p>
         )}
 
@@ -457,7 +458,9 @@ function Actions({
         <>
           <SmallAction
             label="Copiar"
-            onClick={() => void navigator.clipboard?.writeText(link.short_url)}
+            onClick={() =>
+              void navigator.clipboard?.writeText(link.subdomain_url ?? link.short_url)
+            }
           >
             <Copy size={15} strokeWidth={1.5} />
           </SmallAction>

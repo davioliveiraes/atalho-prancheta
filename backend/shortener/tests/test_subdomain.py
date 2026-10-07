@@ -6,10 +6,15 @@ quem distingue os dois é o Host, lido pelo middleware antes de o Django resolve
 a URL.
 """
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+
+from rest_framework.test import APITestCase
 
 from shortener.middleware import extract_subdomain
 from shortener.models import Click, ShortenedURL
+
+User = get_user_model()
 
 
 class ExtractSubdomainTest(TestCase):
@@ -145,3 +150,91 @@ class SubdomainModelTest(TestCase):
 
         self.assertIsNone(first.subdomain)
         self.assertIsNone(second.subdomain)
+
+
+@override_settings(SHORTLINK_BASE_DOMAIN="atalho.app", ALLOWED_HOSTS=[".atalho.app", "testserver"])
+class SubdomainRenameTest(APITestCase):
+    """
+    O subdomínio é o nome do link, e o dono pode trocá-lo.
+
+    O código do caminho é o endereço fixo: não muda, e é para ele que o QR Code
+    aponta. É o que deixa a troca de nome sem consequência para o papel impresso.
+    """
+
+    def setUp(self):
+        self.davi = User.objects.create_user(username="davi@exemplo.com", email="davi@exemplo.com")
+        self.client.force_authenticate(self.davi)
+        self.link = ShortenedURL.objects.create(
+            original_url="https://google.com",
+            short_code="aB3xY9",
+            subdomain="wppdavi",
+            owner=self.davi,
+            qr_code="qrcodes/aB3xY9.png",
+        )
+
+    def rename(self, **data):
+        return self.client.patch("/api/urls/aB3xY9/", data, format="json")
+
+    def visit(self, host, path="/"):
+        return self.client.get(path, HTTP_HOST=host)
+
+    def test_the_new_name_answers_and_the_old_one_stops(self):
+        response = self.rename(subdomain="wppdavi-novo")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.visit("wppdavi-novo.atalho.app").status_code, 302)
+        self.assertEqual(self.visit("wppdavi.atalho.app").status_code, 404)
+
+    def test_the_fixed_address_and_the_qr_code_do_not_change(self):
+        self.rename(subdomain="wppdavi-novo")
+
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.short_code, "aB3xY9")
+        self.assertEqual(self.link.qr_code.name, "qrcodes/aB3xY9.png")
+        self.assertEqual(self.visit("atalho.app", "/aB3xY9").status_code, 302)
+
+    def test_name_and_destination_change_together(self):
+        """O caso do grupo: nasce apontando para um lugar provisório, e depois tudo muda."""
+        self.rename(subdomain="grupo-davi", original_url="https://chat.whatsapp.com/GRUPO123")
+
+        response = self.visit("grupo-davi.atalho.app")
+
+        self.assertEqual(response.url, "https://chat.whatsapp.com/GRUPO123")  # type: ignore
+
+    def test_another_links_name_is_not_available(self):
+        ShortenedURL.objects.create(
+            original_url="https://exemplo.com", short_code="outro1", subdomain="ocupado"
+        )
+
+        response = self.rename(subdomain="ocupado")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("subdomain", response.data)  # type: ignore
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.subdomain, "wppdavi")
+
+    def test_keeping_the_same_name_is_not_a_conflict_with_itself(self):
+        response = self.rename(subdomain="wppdavi", original_url="https://exemplo.com/novo")
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_a_name_with_capitals_is_stored_in_lower_case(self):
+        """O navegador manda o Host em minúsculas: `wppDavi` e `wppdavi` são o mesmo endereço."""
+        self.rename(subdomain="wppDavi2")
+
+        self.link.refresh_from_db()
+        self.assertEqual(self.link.subdomain, "wppdavi2")
+        self.assertEqual(self.visit("WppDavi2.atalho.app").status_code, 302)
+
+    def test_clearing_the_name_leaves_only_the_fixed_address(self):
+        self.rename(subdomain="")
+
+        self.link.refresh_from_db()
+        self.assertIsNone(self.link.subdomain)
+        self.assertEqual(self.visit("wppdavi.atalho.app").status_code, 404)
+        self.assertEqual(self.visit("atalho.app", "/aB3xY9").status_code, 302)
+
+    def test_the_panel_search_finds_the_link_by_its_name(self):
+        response = self.client.get("/api/urls/", {"search": "wppd"})
+
+        self.assertEqual(response.data["count"], 1)  # type: ignore

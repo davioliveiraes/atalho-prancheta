@@ -5,7 +5,7 @@ import { QrDialog } from "../components/QrDialog";
 import { RefreshButton, StateTag } from "../components/elements";
 import { Plate } from "../components/Plate";
 import { ApiError, linkApi } from "../lib/api";
-import { formatDateShort, formatNumber, hostOf, linkState } from "../lib/format";
+import { formatDateShort, formatNumber, linkState } from "../lib/format";
 import { useRegisterMobileBar } from "../lib/mobileBar";
 import { useIsMobile } from "../lib/useIsMobile";
 import { Link, navigate } from "../lib/router";
@@ -325,7 +325,7 @@ export function PanelPage() {
               </colgroup>
               <thead>
                 <tr>
-                  <th>Código</th>
+                  <th>Nome</th>
                   <th>Destino</th>
                   <th className="num">Cliques</th>
                   <th className="num">Únicos</th>
@@ -397,10 +397,17 @@ function MobileCard({
             color: ink,
           }}
         >
-          {item.short_code}
+          {item.subdomain ?? item.short_code}
         </Link>
         <StateTag state={state} />
       </div>
+
+      {/* Com nome, o código fica como endereço fixo — mesma regra da tabela. */}
+      {item.subdomain && (
+        <p style={{ fontSize: 12, lineHeight: "18px", color: "var(--ink-meta)" }}>
+          /{item.short_code}
+        </p>
+      )}
 
       <p className="break" style={{ fontSize: 13, lineHeight: "19px", color: faded ? "var(--ink-disabled)" : "var(--ink-small)" }}>
         {item.original_url}
@@ -462,7 +469,9 @@ function MobileCard({
             type="button"
             className="btn btn-secondary"
             style={{ height: 44 }}
-            onClick={() => void navigator.clipboard?.writeText(item.short_url)}
+            onClick={() =>
+              void navigator.clipboard?.writeText(item.subdomain_url ?? item.short_url)
+            }
           >
             <Copy size={16} strokeWidth={1.5} />
             Copiar
@@ -530,17 +539,17 @@ function Row({
             textDecoration: "none",
           }}
         >
-          {item.short_code}
+          {item.subdomain ?? item.short_code}
         </Link>
-        {/* O segundo endereço do link, quando existe. Fica sob o código porque
-            é o mesmo link, e não outro. */}
-        {item.subdomain_url && (
+        {/* Com nome (subdomínio), o código vira o endereço fixo — o mesmo link,
+            e não outro —, e fica embaixo, menor. */}
+        {item.subdomain && (
           <div
             className="truncate"
-            title={item.subdomain_url}
+            title={item.short_url}
             style={{ fontSize: 12, lineHeight: "18px", color: "var(--ink-meta)" }}
           >
-            {hostOf(item.subdomain_url)}
+            /{item.short_code}
           </div>
         )}
       </td>
@@ -582,7 +591,7 @@ function RowActions({
     <IconAction
       key="copy"
       label="Copiar"
-      onClick={() => void navigator.clipboard?.writeText(item.short_url)}
+      onClick={() => void navigator.clipboard?.writeText(item.subdomain_url ?? item.short_url)}
     >
       <Copy size={16} strokeWidth={1.5} />
     </IconAction>
