@@ -117,12 +117,14 @@ export function clicksByDay(clicks: ClickRecord[], days = 7) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const keys: { key: string; label: string }[] = [];
+  const keys: { key: string; label: string; date: Date }[] = [];
   for (let offset = days - 1; offset >= 0; offset -= 1) {
     const date = new Date(today);
     date.setDate(date.getDate() - offset);
     const key = date.toISOString().slice(0, 10);
-    keys.push({ key, label: String(date.getDate()).padStart(2, "0") });
+    // `label` é o dia do eixo ("03"); `date` vai inteira para a dica do hover,
+    // onde cabe o dia da semana e o mês.
+    keys.push({ key, label: String(date.getDate()).padStart(2, "0"), date });
     buckets.set(key, 0);
   }
 
@@ -136,5 +138,10 @@ export function clicksByDay(clicks: ClickRecord[], days = 7) {
     }
   }
 
-  return keys.map(({ key, label }) => ({ label, value: buckets.get(key) ?? 0 }));
+  return keys.map(({ key, label, date }) => ({ label, date, value: buckets.get(key) ?? 0 }));
+}
+
+/** `sex., 03/10` — o dia de uma barra do gráfico, por extenso o bastante para a dica. */
+export function formatChartDay(date: Date) {
+  return date.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
 }

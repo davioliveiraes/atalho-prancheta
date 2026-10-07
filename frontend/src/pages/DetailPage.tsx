@@ -12,6 +12,7 @@ import {
   formatDate,
   formatDateCompact,
   formatDateShort,
+  formatChartDay,
   formatDateTime,
   formatNumber,
   hostOf,
@@ -234,43 +235,10 @@ export function DetailPage({ shortCode }: { shortCode: string }) {
               </span>
             }
           >
-            <div style={{ padding: "24px 20px 16px" }}>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 180 }}>
-                {series.map((point) => (
-                  <div
-                    key={point.label}
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "flex-end",
-                      alignItems: "center",
-                      gap: 8,
-                      height: "100%",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        height: (point.value / peak) * 132,
-                        background: "var(--color-accent)",
-                      }}
-                    />
-                    <span
-                      className="tnum"
-                      style={{
-                        fontSize: 11,
-                        letterSpacing: ".04em",
-                        color: "var(--ink-disabled)",
-                      }}
-                    >
-                      {point.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            {/* 40px no topo, e não 24: é a folga que a dica da barra mais alta
+                precisa para abrir sem invadir o cabeçalho da placa. */}
+            <div style={{ padding: "40px 20px 16px" }}>
+              <ClicksChart series={series} peak={peak} />
 
               <div className="seg" role="radiogroup" aria-label="Janela do gráfico" style={{ marginTop: 16 }}>
                 {WINDOWS.map((value) => (
@@ -498,6 +466,84 @@ function BlockTitle({ children }: { children: ReactNode }) {
     >
       {children}
     </span>
+  );
+}
+
+/** Altura da barra do pico; as outras são proporcionais a ela. */
+const BAR_MAX = 132;
+
+/** Linha do dia sob a barra (11px de texto) mais o vão de 8px até a barra. */
+const AXIS_ROOM = 8 + 14;
+
+/**
+ * "Cliques por dia", com a contagem de cada dia sob o ponteiro.
+ *
+ * O alvo do hover é a coluna inteira, e não a barra pintada: num dia sem clique
+ * a barra tem altura zero, e ninguém acerta um alvo que não existe. A coluna
+ * apontada ganha um fundo leve e a barra escurece um degrau — no escuro, clareia —
+ * para o leitor ver qual dia está lendo.
+ *
+ * O teclado chega ao mesmo lugar: cada coluna é focável e mostra a mesma dica no
+ * foco. Para o leitor de tela, o `aria-label` da coluna já diz o dia e a
+ * contagem, e a dica fica escondida dele para não ser lida duas vezes.
+ *
+ * No toque não existe "passar por cima": tocar abre a dica, e ela fica até
+ * tocar noutro dia — sem isto, o `pointerleave` que o toque dispara logo em
+ * seguida a fecharia antes de alguém conseguir ler.
+ */
+function ClicksChart({
+  series,
+  peak,
+}: {
+  series: { label: string; date: Date; value: number }[];
+  peak: number;
+}) {
+  const [active, setActive] = useState<number | null>(null);
+  const last = series.length - 1;
+
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 180 }}>
+      {series.map((point, index) => {
+        const height = (point.value / peak) * BAR_MAX;
+        const isActive = active === index;
+        const clicks = `${formatNumber(point.value)} ${point.value === 1 ? "clique" : "cliques"}`;
+        const day = `${formatChartDay(point.date)}${index === last ? " · hoje" : ""}`;
+        // Nas pontas a dica abre para dentro: centrada, ela sairia da placa na
+        // janela de 30 dias, em que cada coluna tem poucos pixels.
+        const align = index < 2 ? "start" : index > last - 2 ? "end" : "center";
+
+        return (
+          <div
+            key={point.date.toISOString()}
+            className="chart-col"
+            data-active={isActive || undefined}
+            tabIndex={0}
+            aria-label={`${day}: ${clicks}`}
+            onPointerEnter={() => setActive(index)}
+            onPointerDown={() => setActive(index)}
+            onPointerLeave={(event) => {
+              if (event.pointerType !== "touch") setActive(null);
+            }}
+            onFocus={() => setActive(index)}
+            onBlur={() => setActive(null)}
+          >
+            {isActive && (
+              <span
+                className="chart-tip"
+                data-align={align}
+                aria-hidden="true"
+                style={{ bottom: height + AXIS_ROOM + 6 }}
+              >
+                <strong className="tnum">{clicks}</strong>
+                <span>{day}</span>
+              </span>
+            )}
+            <span className="chart-bar" style={{ height }} />
+            <span className="chart-day tnum">{point.label}</span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

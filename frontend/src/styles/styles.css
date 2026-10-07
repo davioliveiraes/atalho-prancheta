@@ -1090,6 +1090,92 @@ img {
   background: var(--color-accent);
 }
 
+/* "Cliques por dia" na tela do link. A coluna inteira é o alvo do hover — num
+   dia sem clique a barra tem altura zero —, e a dica abre acima da barra. */
+.chart-col {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  outline-offset: 0;
+}
+
+.chart-col[data-active] {
+  background: var(--color-hover);
+}
+
+.chart-bar {
+  display: block;
+  width: 100%;
+  background: var(--color-accent);
+}
+
+/* Um degrau da rampa: mais escuro no claro, mais claro no escuro — o 700 é o
+   mesmo do kicker, legível sobre o fundo nos dois temas. */
+.chart-col[data-active] .chart-bar {
+  background: var(--color-accent-700);
+}
+
+.chart-day {
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.04em;
+  color: var(--ink-disabled);
+}
+
+.chart-col[data-active] .chart-day {
+  color: var(--ink-body);
+}
+
+/* A dica: o número na frente, forte; o dia atrás, menor. É o leitor que já sabe
+   que está olhando cliques e quer o valor. */
+.chart-tip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-divider);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+  pointer-events: none;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.chart-tip[data-align="start"] {
+  left: 0;
+  transform: none;
+}
+
+.chart-tip[data-align="end"] {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.chart-tip > strong {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 20px;
+  letter-spacing: 0.02em;
+  color: var(--ink-body);
+}
+
+.chart-tip > span {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-meta);
+}
+
 .bars-axis {
   display: flex;
   gap: 6px;
